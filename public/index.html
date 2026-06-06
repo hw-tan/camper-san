@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Camper-San">
+  <meta name="theme-color" content="#2d7a4f">
+  <title>Camper-San</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
+
+    /* ── Map ── */
+    #map { position: fixed; inset: 0; z-index: 0; }
+
+    /* ── Top bar ── */
+    #topbar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 1010;
+      height: 54px;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 14px;
+      box-shadow: 0 1px 8px rgba(0,0,0,0.12);
+    }
+    #logo { font-size: 17px; font-weight: 800; color: #2d7a4f; letter-spacing: -0.3px; display: flex; align-items: center; gap: 6px; }
+    #logo-icon { font-size: 22px; }
+    #topbar-right { display: flex; align-items: center; gap: 8px; }
+    #spot-count { font-size: 11px; color: #999; font-weight: 500; }
+    .icon-btn {
+      width: 38px; height: 38px; border: none; border-radius: 50%;
+      background: #f0f0f0; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .icon-btn:active { background: #ddd; }
+
+    /* ── Filter bar ── */
+    #filter-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1010;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      padding: 10px 12px 12px;
+      display: flex; gap: 7px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      box-shadow: 0 -1px 8px rgba(0,0,0,0.1);
+    }
+    #filter-bar::-webkit-scrollbar { display: none; }
+    .chip {
+      flex-shrink: 0; scroll-snap-align: start;
+      padding: 7px 14px; border-radius: 999px;
+      border: 1.5px solid #e0e0e0; background: white;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      white-space: nowrap; color: #444;
+      transition: all 0.15s; -webkit-tap-highlight-color: transparent;
+    }
+    .chip.active { background: #2d7a4f; border-color: #2d7a4f; color: white; }
+    .chip:active { opacity: 0.7; }
+
+    /* ── Overlay ── */
+    #overlay { display: none; position: fixed; inset: 0; z-index: 990; }
+    #overlay.on { display: block; }
+
+    /* ── Bottom sheet ── */
+    #sheet {
+      position: fixed; left: 0; right: 0; bottom: 58px; z-index: 1000;
+      background: white; border-radius: 20px 20px 0 0;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
+      max-height: 65vh; display: flex; flex-direction: column;
+      transform: translateY(105%); transition: transform 0.32s cubic-bezier(0.32,0.72,0,1);
+      will-change: transform;
+    }
+    #sheet.open { transform: translateY(0); }
+    #sheet-handle-area {
+      flex-shrink: 0; padding: 10px 0 4px; display: flex; justify-content: center; cursor: pointer;
+    }
+    #sheet-handle { width: 36px; height: 4px; background: #d0d0d0; border-radius: 2px; }
+    #sheet-scroll { flex: 1; overflow-y: auto; padding: 0 18px 24px; -webkit-overflow-scrolling: touch; }
+
+    /* Sheet content */
+    .s-cat { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .s-title-en { font-size: 19px; font-weight: 800; color: #111; line-height: 1.25; margin-bottom: 3px; }
+    .s-title-ja { font-size: 14px; color: #666; margin-bottom: 10px; }
+    .s-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
+    .tag {
+      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
+    }
+    .t-s   { background: #FFF9C4; color: #F57F17; }
+    .t-ss  { background: #FFD700; color: #5D4037; }
+    .t-a   { background: #C8E6C9; color: #1B5E20; }
+    .t-b   { background: #F5F5F5; color: #616161; }
+    .t-plan { background: #E3F2FD; color: #0D47A1; }
+    .t-paid { background: #FCE4EC; color: #880E4F; }
+    .t-free { background: #E8F5E9; color: #1B5E20; }
+    .t-quiet { background: #F3E5F5; color: #4A148C; }
+    .t-warn { background: #FBE9E7; color: #BF360C; }
+    .t-elev { background: #E8EAF6; color: #1A237E; }
+    .s-divider { height: 1px; background: #f0f0f0; margin: 10px 0; }
+    .s-info { font-size: 13.5px; color: #333; line-height: 1.6; margin-bottom: 8px; }
+    .s-info-row { display: flex; gap: 6px; margin-bottom: 3px; }
+    .s-info-lbl { color: #aaa; width: 75px; flex-shrink: 0; font-size: 12px; }
+    .s-en-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 10px; }
+    .s-ja-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
+    .s-ja-text {
+      font-size: 12.5px; color: #777; line-height: 1.9;
+      max-height: 120px; overflow-y: auto; white-space: pre-wrap;
+      background: #fafafa; border-radius: 8px; padding: 8px 10px;
+    }
+    .s-actions { display: flex; gap: 9px; margin-top: 14px; }
+    .btn {
+      flex: 1; padding: 13px 8px; border-radius: 14px; border: none;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 5px;
+      -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+    }
+    .btn:active { opacity: 0.75; }
+    .btn-maps { background: #E8F5E9; color: #2E7D32; }
+    .btn-nav  { background: #2d7a4f; color: white; }
+
+    /* Marker dots */
+    .mk {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; border: 2px solid rgba(255,255,255,0.9);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
+    }
+
+    /* Leaflet zoom control position */
+    .leaflet-top.leaflet-right { top: 62px; }
+
+    /* Loading */
+    #loading {
+      position: fixed; inset: 0; z-index: 999;
+      background: white; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 16px;
+    }
+    #loading-icon { font-size: 52px; animation: pulse 1.4s ease-in-out infinite; }
+    #loading-text { font-size: 15px; color: #888; font-weight: 500; }
+    @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+    /* PWA safe areas */
+    @supports (padding-bottom: env(safe-area-inset-bottom)) {
+      #filter-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+      #sheet { bottom: calc(58px + env(safe-area-inset-bottom)); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading">
+  <div id="loading-icon">🏕</div>
+  <div id="loading-text">Loading Camper-San…</div>
+</div>
+
+<div id="map"></div>
+
+<div id="topbar">
+  <div id="logo"><span id="logo-icon">🏕</span>Camper-San</div>
+  <div id="topbar-right">
+    <span id="spot-count"></span>
+    <button class="icon-btn" id="btn-locate" title="My location">📍</button>
+  </div>
+</div>
+
+<div id="filter-bar">
+  <button class="chip active" data-filter="all">All</button>
+  <button class="chip" data-filter="camping">🅿️ Camp Spots</button>
+  <button class="chip" data-filter="onsen">♨️ Hot Springs</button>
+  <button class="chip" data-filter="highway">🛣️ Highway</button>
+  <button class="chip" data-filter="food">🍜 Food</button>
+  <button class="chip" data-filter="sights">🗺️ Sights</button>
+  <button class="chip" data-filter="top">⭐ A/S Rank</button>
+  <button class="chip" data-filter="caution">⚠️ Caution</button>
+</div>
+
+<div id="overlay"></div>
+
+<div id="sheet">
+  <div id="sheet-handle-area"><div id="sheet-handle"></div></div>
+  <div id="sheet-scroll" id="sheet-body"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script>
+(() => {
+  // ── Filter definitions ──────────────────────────────────────────────────
+  const FILTERS = {
+    all:     () => true,
+    camping: f => ['st','stM','stC','sty','styC'].includes(f.p.icon),
+    onsen:   f => ['on','on-Me','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-K-sw','hs-KS','hsS'].includes(f.p.icon),
+    highway: f => ['stSAPA','hs-K-sw','hs-KS'].includes(f.p.icon),
+    food:    f => f.p.category === 'food',
+    sights:  f => f.p.category === 'sights',
+    top:     f => f.p.rank === 'S' || f.p.rank === 'A',
+    caution: f => f.p.icon === 'df',
+  };
+
+  let map, cluster, allMarkers = [], currentFilter = 'all';
+
+  // ── Init map ─────────────────────────────────────────────────────────────
+  map = L.map('map', {
+    center: [36.5, 137.5],
+    zoom: 5,
+    zoomControl: false,
+    preferCanvas: true,
+  });
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
+    maxZoom: 19,
+  }).addTo(map);
+
+  L.control.zoom({ position: 'topright' }).addTo(map);
+
+  cluster = L.markerClusterGroup({
+    chunkedLoading: true,
+    chunkInterval: 200,
+    chunkDelay: 50,
+    maxClusterRadius: 48,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    disableClusteringAtZoom: 14,
+    iconCreateFunction: c => {
+      const n = c.getChildCount();
+      const s = n < 10 ? 32 : n < 100 ? 38 : 44;
+      return L.divIcon({
+        html: `<div style="width:${s}px;height:${s}px;background:#2d7a4f;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:${s < 38 ? 12 : 13}px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${n}</div>`,
+        className: '', iconSize: [s, s], iconAnchor: [s/2, s/2],
+      });
+    },
+  });
+
+  // ── Load data ────────────────────────────────────────────────────────────
+  fetch('/spots.json')
+    .then(r => r.json())
+    .then(geojson => {
+      allMarkers = geojson.features.map(feature => {
+        const p = feature.properties;
+        const [lng, lat] = feature.geometry.coordinates;
+
+        // Pick a good emoji for the dot
+        let dot = p.emoji || '📍';
+        // Simplify multi-char emoji to single char for dot readability
+        if (p.icon === 'hs-sw' || p.icon === 'hs-M-sw' || p.icon === 'hs-K-sw') dot = '🚿';
+        else if (p.category === 'onsen') dot = '♨';
+        else if (p.category === 'camping') dot = p.icon === 'stC' ? '🏕' : p.icon === 'stM' ? '🏪' : '🅿';
+        else if (p.icon === 'stSAPA') dot = '🛣';
+        else if (p.category === 'food') dot = '🍜';
+
+        const icon = L.divIcon({
+          html: `<div class="mk" style="background:${p.color}">${dot}</div>`,
+          className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+        });
+
+        const marker = L.marker([lat, lng], { icon });
+        marker.f = feature;
+        marker.p = p;
+        marker.on('click', () => openSheet(feature));
+        return marker;
+      });
+
+      applyFilter('all');
+      document.getElementById('loading').style.display = 'none';
+      updateCount();
+    })
+    .catch(() => {
+      document.getElementById('loading-text').textContent = 'Failed to load spots data.';
+    });
+
+  // ── Filters ──────────────────────────────────────────────────────────────
+  function applyFilter(key) {
+    currentFilter = key;
+    cluster.clearLayers();
+
+    const fn = FILTERS[key];
+    const filtered = allMarkers.filter(m => fn(m));
+
+    // Add in chunks to keep UI responsive
+    const CHUNK = 300;
+    let i = 0;
+    function addChunk() {
+      cluster.addLayers(filtered.slice(i, i + CHUNK));
+      i += CHUNK;
+      updateCount();
+      if (i < filtered.length) setTimeout(addChunk, 30);
+    }
+    addChunk();
+
+    if (!map.hasLayer(cluster)) map.addLayer(cluster);
+
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === key));
+    updateCount();
+  }
+
+  function updateCount() {
+    const fn = FILTERS[currentFilter];
+    const n = allMarkers.filter(m => fn(m)).length;
+    document.getElementById('spot-count').textContent = n.toLocaleString() + ' spots';
+  }
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => applyFilter(chip.dataset.filter));
+  });
+
+  // ── Locate ───────────────────────────────────────────────────────────────
+  document.getElementById('btn-locate').addEventListener('click', () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      pos => map.setView([pos.coords.latitude, pos.coords.longitude], 13),
+      () => alert('Could not get your location.')
+    );
+  });
+
+  // ── Bottom sheet ─────────────────────────────────────────────────────────
+  const sheet   = document.getElementById('sheet');
+  const scroll  = document.getElementById('sheet-scroll');
+  const overlay = document.getElementById('overlay');
+
+  function openSheet(feature) {
+    const p = feature.properties;
+    const [lng, lat] = feature.geometry.coordinates;
+
+    const tags = [];
+    if (p.rank === 'S')   tags.push(`<span class="tag t-ss">⭐ S-Rank</span>`);
+    if (p.rank === 'A')   tags.push(`<span class="tag t-a">😄 A-Rank</span>`);
+    if (p.rank === 'B')   tags.push(`<span class="tag t-b">B-Rank</span>`);
+    if (p.planned)        tags.push(`<span class="tag t-plan">🔜 Planned</span>`);
+    if (p.paid)           tags.push(`<span class="tag t-paid">💰 Paid</span>`);
+    if (p.free_camp)      tags.push(`<span class="tag t-free">🆓 Free Camp</span>`);
+    if (p.free)           tags.push(`<span class="tag t-free">🆓 Free</span>`);
+    if (p.quiet)          tags.push(`<span class="tag t-quiet">😴 Quiet</span>`);
+    if (p.reservation)    tags.push(`<span class="tag t-warn">📞 Reservation Required</span>`);
+    if (p.warning === 'night-toilet') tags.push(`<span class="tag t-warn">⚠ Night Toilets Closed</span>`);
+    if (p.elevation)      tags.push(`<span class="tag t-elev">🏔 ${p.elevation}m</span>`);
+
+    const rows = [];
+    if (p.price)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">💴 Cost</span><span>From ¥${p.price.toLocaleString()}</span></div>`);
+    if (p.hours)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">🕐 Hours</span><span>${esc(p.hours)}</span></div>`);
+    if (p.amenities && p.amenities.length > 0)
+                  rows.push(`<div class="s-info-row"><span class="s-info-lbl">✅ Amenities</span><span>${esc(p.amenities.join(' · '))}</span></div>`);
+    rows.push(`<div class="s-info-row"><span class="s-info-lbl">📍 Region</span><span>${esc(p.region)} <span style="color:#bbb">${esc(p.region_ja)}</span></span></div>`);
+
+    const googleUrl = `https://www.google.com/maps?q=${lat},${lng}&t=h&z=15`;
+    const navUrl    = `geo:${lat},${lng}?q=${lat},${lng}`;
+
+    scroll.innerHTML = `
+      <div class="s-cat">${esc(p.emoji)} ${esc(p.label)}</div>
+      <div class="s-title-en">${esc(p.title_en || p.title_ja || '')}</div>
+      <div class="s-title-ja">${esc(p.title_ja || '')}</div>
+      ${tags.length ? `<div class="s-tags">${tags.join('')}</div>` : ''}
+      <div class="s-info">${rows.join('')}</div>
+      ${p.desc_en ? `<div class="s-en-desc">${esc(p.desc_en)}</div>` : ''}
+      ${p.desc_ja ? `
+        <div class="s-divider"></div>
+        <div class="s-ja-label">Original Japanese</div>
+        <div class="s-ja-text">${esc(p.desc_ja)}</div>
+      ` : ''}
+      <div class="s-actions">
+        <button class="btn btn-maps" onclick="window.open('${googleUrl}','_blank')">🗺 Google Maps</button>
+        <button class="btn btn-nav"  onclick="window.location.href='${navUrl}'">⬆ Navigate</button>
+      </div>
+    `;
+
+    sheet.classList.add('open');
+    overlay.classList.add('on');
+  }
+
+  function closeSheet() {
+    sheet.classList.remove('open');
+    overlay.classList.remove('on');
+  }
+
+  overlay.addEventListener('click', closeSheet);
+  document.getElementById('sheet-handle-area').addEventListener('click', closeSheet);
+
+  // Swipe down to close
+  let touchStartY = 0;
+  sheet.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
+  sheet.addEventListener('touchend', e => {
+    if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
+  }, { passive: true });
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+  function esc(s) {
+    return String(s ?? '')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+})();
+</script>
+</body>
+</html>
