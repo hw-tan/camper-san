@@ -146,6 +146,112 @@
     #loading-text { font-size: 15px; color: #888; font-weight: 500; }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
 
+    /* ── Offline badge ── */
+    #offline-tag {
+      display: none; font-size: 10px; font-weight: 800; letter-spacing: 0.4px;
+      background: #ff5722; color: white; padding: 3px 8px; border-radius: 999px;
+    }
+    #offline-tag.on { display: inline-block; }
+
+    /* ── Update banner ── */
+    #update-banner {
+      display: none; position: fixed; top: 54px; left: 0; right: 0; z-index: 1015;
+      background: #1a5c38; color: white; font-size: 13px; font-weight: 600;
+      padding: 10px 16px; align-items: center; justify-content: center; gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #update-banner.on { display: flex; }
+    #update-reload {
+      padding: 4px 14px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.8);
+      background: transparent; color: white; font-size: 12px; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── Search ── */
+    #search-wrap { display: none; flex: 1; align-items: center; gap: 8px; }
+    #topbar.search-active #logo { display: none; }
+    #topbar.search-active #topbar-right { display: none; }
+    #topbar.search-active #search-wrap { display: flex; }
+    #search-input {
+      flex: 1; height: 36px; border: none; outline: none;
+      background: #f0f0f0; border-radius: 18px; padding: 0 14px;
+      font-size: 15px; color: #111; -webkit-appearance: none;
+    }
+    #search-input::placeholder { color: #aaa; }
+    #search-results {
+      position: fixed; top: 54px; left: 0; right: 0; z-index: 1009;
+      background: white; max-height: calc(8 * 54px);
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.14); display: none;
+    }
+    #search-results.on { display: block; }
+    .sr {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; border-bottom: 1px solid #f5f5f5;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+    .sr:last-child { border-bottom: none; }
+    .sr:active { background: #f9f9f9; }
+    .sr-dot { font-size: 20px; flex-shrink: 0; line-height: 1; }
+    .sr-body { flex: 1; min-width: 0; }
+    .sr-name { font-size: 14px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sr-meta { font-size: 11px; color: #aaa; margin-top: 1px; }
+    .sr-rank { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; flex-shrink: 0; }
+    .sr-rank-s { background: #FFD700; color: #5D4037; }
+    .sr-rank-a { background: #C8E6C9; color: #1B5E20; }
+    .sr-empty { padding: 24px; text-align: center; color: #bbb; font-size: 13px; }
+
+    /* ── Radius badge ── */
+    #radius-badge {
+      display: none; position: fixed; top: 62px; left: 50%; transform: translateX(-50%);
+      z-index: 1005; background: #2d7a4f; color: white;
+      font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 999px;
+      cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      -webkit-tap-highlight-color: transparent;
+    }
+    #radius-badge.on { display: block; }
+
+    /* ── Radius picker modal ── */
+    #radius-picker {
+      display: none; position: fixed; inset: 0; z-index: 1060;
+      background: rgba(0,0,0,0.45); align-items: flex-end; justify-content: center;
+      padding-bottom: 12px;
+    }
+    #radius-picker.on { display: flex; }
+    .radius-card {
+      background: white; border-radius: 20px; padding: 22px 18px 18px;
+      width: calc(100% - 24px); max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    }
+    .radius-title { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 3px; }
+    .radius-sub { font-size: 12px; color: #999; margin-bottom: 16px; }
+    .radius-options { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
+    .radius-opt {
+      padding: 14px 16px; border-radius: 14px; border: 1.5px solid #e0e0e0;
+      background: white; font-size: 14px; font-weight: 600; cursor: pointer;
+      text-align: left; color: #333; display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+    }
+    .radius-opt:active { background: #f5f5f5; }
+    .radius-opt.selected { background: #E8F5E9; border-color: #2d7a4f; color: #2d7a4f; }
+    .radius-hint { font-size: 11px; font-weight: 500; color: #bbb; }
+    .radius-opt.selected .radius-hint { color: #81C784; }
+    .radius-cancel {
+      width: 100%; padding: 13px; border-radius: 14px; border: none;
+      background: #f5f5f5; font-size: 14px; font-weight: 600;
+      cursor: pointer; color: #666; -webkit-tap-highlight-color: transparent;
+    }
+    .radius-cancel:active { background: #ebebeb; }
+
+    /* ── Toast ── */
+    #toast {
+      display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; background: #333; color: white;
+      padding: 9px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.on { display: block; }
+
     /* PWA safe areas */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       #filter-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
@@ -164,8 +270,15 @@
 
 <div id="topbar">
   <div id="logo"><span id="logo-icon">🏕</span>Camper-San</div>
+  <div id="search-wrap">
+    <button id="btn-search-back" class="icon-btn">←</button>
+    <input id="search-input" type="search" placeholder="Search spots, regions…" autocomplete="off" autocorrect="off" autocapitalize="off">
+  </div>
   <div id="topbar-right">
+    <span id="offline-tag">OFFLINE</span>
     <span id="spot-count"></span>
+    <button class="icon-btn" id="btn-search" title="Search">🔍</button>
+    <button class="icon-btn" id="btn-near-me" title="Near Me">🎯</button>
     <button class="icon-btn" id="btn-locate" title="My location">📍</button>
   </div>
 </div>
@@ -182,6 +295,14 @@
   <button class="chip" data-filter="caution">⚠️ Caution</button>
 </div>
 
+<div id="update-banner">
+  🔄 Update ready
+  <button id="update-reload">Reload</button>
+</div>
+
+<div id="radius-badge"></div>
+<div id="search-results"></div>
+
 <div id="overlay"></div>
 
 <div id="sheet">
@@ -189,17 +310,32 @@
   <div id="sheet-scroll" id="sheet-body"></div>
 </div>
 
+<div id="radius-picker">
+  <div class="radius-card">
+    <div class="radius-title">🎯 Near Me</div>
+    <div class="radius-sub">Show spots within…</div>
+    <div class="radius-options">
+      <button class="radius-opt" data-km="50">50 km <span class="radius-hint">~1 hr drive</span></button>
+      <button class="radius-opt" data-km="100">100 km <span class="radius-hint">~1.5 hr drive</span></button>
+      <button class="radius-opt" data-km="200">200 km <span class="radius-hint">~2.5 hr drive</span></button>
+    </div>
+    <button class="radius-cancel" id="radius-clear">✕ &nbsp;Clear — show all</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 (() => {
   // ── GPS session cache ────────────────────────────────────────────────────
   const gps = { pos: null };
-  function requestGPS(onSuccess) {
-    if (!navigator.geolocation) return;
+  function requestGPS(onSuccess, onError) {
+    if (!navigator.geolocation) { if (onError) onError(); return; }
     navigator.geolocation.getCurrentPosition(
       p => { gps.pos = p.coords; if (onSuccess) onSuccess(p.coords); },
-      () => {}
+      () => { if (onError) onError(); }
     );
   }
 
@@ -240,7 +376,18 @@
     caution: f => f.p.icon === 'df',
   };
 
-  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all';
+  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all', nearMeRadius = null;
+
+  // ── Visible set (chip filter + radius) ──────────────────────────────────
+  function getVisible() {
+    const fn = FILTERS[currentFilter];
+    if (!nearMeRadius || !gps.pos) return allMarkers.filter(m => fn(m));
+    return allMarkers.filter(m => {
+      if (!fn(m)) return false;
+      const [lng, lat] = m.f.geometry.coordinates;
+      return distKm(gps.pos.latitude, gps.pos.longitude, lat, lng) <= nearMeRadius;
+    });
+  }
 
   // ── Init map ─────────────────────────────────────────────────────────────
   map = L.map('map', {
@@ -318,8 +465,7 @@
     currentFilter = key;
     cluster.clearLayers();
 
-    const fn = FILTERS[key];
-    const filtered = allMarkers.filter(m => fn(m));
+    const filtered = getVisible();
 
     if (key === 'saved' && filtered.length === 0 && allMarkers.length > 0) {
       scroll.innerHTML = `
@@ -349,9 +495,7 @@
   }
 
   function updateCount() {
-    const fn = FILTERS[currentFilter];
-    const n = allMarkers.filter(m => fn(m)).length;
-    document.getElementById('spot-count').textContent = n.toLocaleString() + ' spots';
+    document.getElementById('spot-count').textContent = getVisible().length.toLocaleString() + ' spots';
   }
 
   document.querySelectorAll('.chip').forEach(chip => {
@@ -361,6 +505,49 @@
   // ── Locate ───────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
     requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
+  });
+
+  // ── Near Me ──────────────────────────────────────────────────────────────
+  const radiusPicker = document.getElementById('radius-picker');
+  const radiusBadge  = document.getElementById('radius-badge');
+
+  function showRadiusPicker() {
+    radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
+      btn.classList.toggle('selected', parseInt(btn.dataset.km) === nearMeRadius);
+    });
+    radiusPicker.classList.add('on');
+  }
+
+  function applyNearMe(km) {
+    nearMeRadius = km;
+    radiusPicker.classList.remove('on');
+    if (km) {
+      radiusBadge.textContent = `📍 Within ${km} km  ×`;
+      radiusBadge.classList.add('on');
+      const visible = getVisible();
+      if (visible.length > 0)
+        map.fitBounds(L.latLngBounds(visible.map(m => m.getLatLng())), { padding: [56, 56] });
+    } else {
+      radiusBadge.classList.remove('on');
+    }
+    applyFilter(currentFilter);
+  }
+
+  document.getElementById('btn-near-me').addEventListener('click', () => {
+    if (gps.pos) { showRadiusPicker(); return; }
+    requestGPS(() => showRadiusPicker(), () => showToast('Location access needed for Near Me'));
+  });
+
+  radiusBadge.addEventListener('click', () => showRadiusPicker());
+
+  radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
+    btn.addEventListener('click', () => applyNearMe(parseInt(btn.dataset.km)));
+  });
+
+  document.getElementById('radius-clear').addEventListener('click', () => applyNearMe(null));
+
+  radiusPicker.addEventListener('click', e => {
+    if (e.target === radiusPicker) radiusPicker.classList.remove('on');
   });
 
   // ── Bottom sheet ─────────────────────────────────────────────────────────
@@ -438,12 +625,130 @@
     if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
   }, { passive: true });
 
+  // ── Search ──────────────────────────────────────────────────────────────
+  const searchInput   = document.getElementById('search-input');
+  const searchResults = document.getElementById('search-results');
+  const topbar        = document.getElementById('topbar');
+  let searchTimer = null;
+
+  function openSearch() {
+    topbar.classList.add('search-active');
+    radiusBadge.classList.remove('on');
+    closeSheet();
+    searchInput.focus();
+  }
+
+  function closeSearch() {
+    topbar.classList.remove('search-active');
+    searchInput.value = '';
+    searchResults.classList.remove('on');
+    searchResults.innerHTML = '';
+    if (nearMeRadius) radiusBadge.classList.add('on');
+  }
+
+  document.getElementById('btn-search').addEventListener('click', openSearch);
+  document.getElementById('btn-search-back').addEventListener('click', closeSearch);
+  searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') closeSearch(); });
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(runSearch, 120);
+  });
+
+  function runSearch() {
+    const q = searchInput.value.trim().toLowerCase();
+    if (!q) { searchResults.classList.remove('on'); return; }
+
+    const chipFn = FILTERS[currentFilter];
+    const hits = [];
+    for (const m of allMarkers) {
+      if (!chipFn(m)) continue;
+      const p = m.p;
+      if ((p.title_en || '').toLowerCase().includes(q) ||
+          (p.title_ja || '').includes(q) ||
+          (p.region   || '').toLowerCase().includes(q) ||
+          (p.region_ja|| '').includes(q)) {
+        hits.push(m);
+        if (hits.length === 20) break;
+      }
+    }
+
+    if (hits.length === 0) {
+      searchResults.innerHTML = `<div class="sr-empty">No results for "<b>${esc(q)}</b>"</div>`;
+    } else {
+      searchResults.innerHTML = hits.map(m => {
+        const p = m.p;
+        const rank = p.rank === 'S' ? `<span class="sr-rank sr-rank-s">S</span>` :
+                     p.rank === 'A' ? `<span class="sr-rank sr-rank-a">A</span>` : '';
+        return `<div class="sr" data-id="${p.id}">
+          <span class="sr-dot">${p.emoji || '📍'}</span>
+          <div class="sr-body">
+            <div class="sr-name">${esc(p.title_en || p.title_ja || '')}</div>
+            <div class="sr-meta">${esc(p.region)} · ${esc(p.label)}</div>
+          </div>
+          ${rank}
+        </div>`;
+      }).join('');
+      searchResults.querySelectorAll('.sr').forEach(row => {
+        row.addEventListener('click', () => {
+          const m = markerById.get(row.dataset.id);
+          if (!m) return;
+          closeSearch();
+          map.setView(m.getLatLng(), 14);
+          openSheet(m.f);
+        });
+      });
+    }
+    searchResults.classList.add('on');
+  }
+
+  map.on('click', () => { if (topbar.classList.contains('search-active')) closeSearch(); });
+
+  // ── Toast ────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('on'), 2800);
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
   function esc(s) {
     return String(s ?? '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+})();
+</script>
+<script>
+// ── Service Worker registration ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+          document.getElementById('update-banner').classList.add('on');
+        }
+      });
+    });
+  });
+
+  document.getElementById('update-reload').addEventListener('click', () => {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg?.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+  });
+}
+
+// ── Offline indicator ────────────────────────────────────────────────────
+(function () {
+  const tag = document.getElementById('offline-tag');
+  function sync() { tag.classList.toggle('on', !navigator.onLine); }
+  window.addEventListener('online', sync);
+  window.addEventListener('offline', sync);
+  sync();
 })();
 </script>
 </body>
