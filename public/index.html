@@ -146,6 +146,57 @@
     #loading-text { font-size: 15px; color: #888; font-weight: 500; }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
 
+    /* ── Radius badge ── */
+    #radius-badge {
+      display: none; position: fixed; top: 62px; left: 50%; transform: translateX(-50%);
+      z-index: 1005; background: #2d7a4f; color: white;
+      font-size: 12px; font-weight: 700; padding: 5px 14px; border-radius: 999px;
+      cursor: pointer; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+      -webkit-tap-highlight-color: transparent;
+    }
+    #radius-badge.on { display: block; }
+
+    /* ── Radius picker modal ── */
+    #radius-picker {
+      display: none; position: fixed; inset: 0; z-index: 1060;
+      background: rgba(0,0,0,0.45); align-items: flex-end; justify-content: center;
+      padding-bottom: 12px;
+    }
+    #radius-picker.on { display: flex; }
+    .radius-card {
+      background: white; border-radius: 20px; padding: 22px 18px 18px;
+      width: calc(100% - 24px); max-width: 400px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22);
+    }
+    .radius-title { font-size: 16px; font-weight: 800; color: #111; margin-bottom: 3px; }
+    .radius-sub { font-size: 12px; color: #999; margin-bottom: 16px; }
+    .radius-options { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
+    .radius-opt {
+      padding: 14px 16px; border-radius: 14px; border: 1.5px solid #e0e0e0;
+      background: white; font-size: 14px; font-weight: 600; cursor: pointer;
+      text-align: left; color: #333; display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.12s; -webkit-tap-highlight-color: transparent;
+    }
+    .radius-opt:active { background: #f5f5f5; }
+    .radius-opt.selected { background: #E8F5E9; border-color: #2d7a4f; color: #2d7a4f; }
+    .radius-hint { font-size: 11px; font-weight: 500; color: #bbb; }
+    .radius-opt.selected .radius-hint { color: #81C784; }
+    .radius-cancel {
+      width: 100%; padding: 13px; border-radius: 14px; border: none;
+      background: #f5f5f5; font-size: 14px; font-weight: 600;
+      cursor: pointer; color: #666; -webkit-tap-highlight-color: transparent;
+    }
+    .radius-cancel:active { background: #ebebeb; }
+
+    /* ── Toast ── */
+    #toast {
+      display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      z-index: 2000; background: #333; color: white;
+      padding: 9px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
+      pointer-events: none; white-space: nowrap;
+    }
+    #toast.on { display: block; }
+
     /* PWA safe areas */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       #filter-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
@@ -166,6 +217,7 @@
   <div id="logo"><span id="logo-icon">🏕</span>Camper-San</div>
   <div id="topbar-right">
     <span id="spot-count"></span>
+    <button class="icon-btn" id="btn-near-me" title="Near Me">🎯</button>
     <button class="icon-btn" id="btn-locate" title="My location">📍</button>
   </div>
 </div>
@@ -182,6 +234,8 @@
   <button class="chip" data-filter="caution">⚠️ Caution</button>
 </div>
 
+<div id="radius-badge"></div>
+
 <div id="overlay"></div>
 
 <div id="sheet">
@@ -189,17 +243,32 @@
   <div id="sheet-scroll" id="sheet-body"></div>
 </div>
 
+<div id="radius-picker">
+  <div class="radius-card">
+    <div class="radius-title">🎯 Near Me</div>
+    <div class="radius-sub">Show spots within…</div>
+    <div class="radius-options">
+      <button class="radius-opt" data-km="50">50 km <span class="radius-hint">~1 hr drive</span></button>
+      <button class="radius-opt" data-km="100">100 km <span class="radius-hint">~1.5 hr drive</span></button>
+      <button class="radius-opt" data-km="200">200 km <span class="radius-hint">~2.5 hr drive</span></button>
+    </div>
+    <button class="radius-cancel" id="radius-clear">✕ &nbsp;Clear — show all</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 (() => {
   // ── GPS session cache ────────────────────────────────────────────────────
   const gps = { pos: null };
-  function requestGPS(onSuccess) {
-    if (!navigator.geolocation) return;
+  function requestGPS(onSuccess, onError) {
+    if (!navigator.geolocation) { if (onError) onError(); return; }
     navigator.geolocation.getCurrentPosition(
       p => { gps.pos = p.coords; if (onSuccess) onSuccess(p.coords); },
-      () => {}
+      () => { if (onError) onError(); }
     );
   }
 
@@ -240,7 +309,18 @@
     caution: f => f.p.icon === 'df',
   };
 
-  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all';
+  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all', nearMeRadius = null;
+
+  // ── Visible set (chip filter + radius) ──────────────────────────────────
+  function getVisible() {
+    const fn = FILTERS[currentFilter];
+    if (!nearMeRadius || !gps.pos) return allMarkers.filter(m => fn(m));
+    return allMarkers.filter(m => {
+      if (!fn(m)) return false;
+      const [lng, lat] = m.f.geometry.coordinates;
+      return distKm(gps.pos.latitude, gps.pos.longitude, lat, lng) <= nearMeRadius;
+    });
+  }
 
   // ── Init map ─────────────────────────────────────────────────────────────
   map = L.map('map', {
@@ -318,8 +398,7 @@
     currentFilter = key;
     cluster.clearLayers();
 
-    const fn = FILTERS[key];
-    const filtered = allMarkers.filter(m => fn(m));
+    const filtered = getVisible();
 
     if (key === 'saved' && filtered.length === 0 && allMarkers.length > 0) {
       scroll.innerHTML = `
@@ -349,9 +428,7 @@
   }
 
   function updateCount() {
-    const fn = FILTERS[currentFilter];
-    const n = allMarkers.filter(m => fn(m)).length;
-    document.getElementById('spot-count').textContent = n.toLocaleString() + ' spots';
+    document.getElementById('spot-count').textContent = getVisible().length.toLocaleString() + ' spots';
   }
 
   document.querySelectorAll('.chip').forEach(chip => {
@@ -361,6 +438,49 @@
   // ── Locate ───────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
     requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
+  });
+
+  // ── Near Me ──────────────────────────────────────────────────────────────
+  const radiusPicker = document.getElementById('radius-picker');
+  const radiusBadge  = document.getElementById('radius-badge');
+
+  function showRadiusPicker() {
+    radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
+      btn.classList.toggle('selected', parseInt(btn.dataset.km) === nearMeRadius);
+    });
+    radiusPicker.classList.add('on');
+  }
+
+  function applyNearMe(km) {
+    nearMeRadius = km;
+    radiusPicker.classList.remove('on');
+    if (km) {
+      radiusBadge.textContent = `📍 Within ${km} km  ×`;
+      radiusBadge.classList.add('on');
+      const visible = getVisible();
+      if (visible.length > 0)
+        map.fitBounds(L.latLngBounds(visible.map(m => m.getLatLng())), { padding: [56, 56] });
+    } else {
+      radiusBadge.classList.remove('on');
+    }
+    applyFilter(currentFilter);
+  }
+
+  document.getElementById('btn-near-me').addEventListener('click', () => {
+    if (gps.pos) { showRadiusPicker(); return; }
+    requestGPS(() => showRadiusPicker(), () => showToast('Location access needed for Near Me'));
+  });
+
+  radiusBadge.addEventListener('click', () => showRadiusPicker());
+
+  radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
+    btn.addEventListener('click', () => applyNearMe(parseInt(btn.dataset.km)));
+  });
+
+  document.getElementById('radius-clear').addEventListener('click', () => applyNearMe(null));
+
+  radiusPicker.addEventListener('click', e => {
+    if (e.target === radiusPicker) radiusPicker.classList.remove('on');
   });
 
   // ── Bottom sheet ─────────────────────────────────────────────────────────
@@ -437,6 +557,15 @@
   sheet.addEventListener('touchend', e => {
     if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
   }, { passive: true });
+
+  // ── Toast ────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('on');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.classList.remove('on'), 2800);
+  }
 
   // ── Helpers ──────────────────────────────────────────────────────────────
   function esc(s) {
