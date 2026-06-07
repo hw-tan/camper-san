@@ -234,7 +234,7 @@ function main() {
       features.push({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [lng, lat] },
-        properties: { region, region_ja, icon: spot.icon, ...iconInfo, ...titleInfo, ...descInfo },
+        properties: { id: features.length, region, region_ja, icon: spot.icon, ...iconInfo, ...titleInfo, ...descInfo },
       });
     }
   }

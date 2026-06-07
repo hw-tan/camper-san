@@ -123,6 +123,7 @@
     .btn:active { opacity: 0.75; }
     .btn-maps { background: #E8F5E9; color: #2E7D32; }
     .btn-nav  { background: #2d7a4f; color: white; }
+    .btn-fav  { background: #FCE4EC; color: #880E4F; }
 
     /* Marker dots */
     .mk {
@@ -177,6 +178,7 @@
   <button class="chip" data-filter="food">🍜 Food</button>
   <button class="chip" data-filter="sights">🗺️ Sights</button>
   <button class="chip" data-filter="top">⭐ A/S Rank</button>
+  <button class="chip" data-filter="saved">❤️ Saved</button>
   <button class="chip" data-filter="caution">⚠️ Caution</button>
 </div>
 
@@ -191,7 +193,41 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 (() => {
-  // ── Filter definitions ──────────────────────────────────────────────────
+  // ── GPS session cache ────────────────────────────────────────────────────
+  const gps = { pos: null };
+  function requestGPS(onSuccess) {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(
+      p => { gps.pos = p.coords; if (onSuccess) onSuccess(p.coords); },
+      () => {}
+    );
+  }
+
+  // ── Haversine distance (km) ──────────────────────────────────────────────
+  function distKm(lat1, lng1, lat2, lng2) {
+    const R = 6371, r = x => x * Math.PI / 180;
+    const dLat = r(lat2 - lat1), dLng = r(lng2 - lng1);
+    const a = Math.sin(dLat/2)**2 + Math.cos(r(lat1)) * Math.cos(r(lat2)) * Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  }
+
+  // ── Favorites ────────────────────────────────────────────────────────────
+  let favs = new Set(JSON.parse(localStorage.getItem('campersan_favs') || '[]'));
+  function saveFavs() {
+    localStorage.setItem('campersan_favs', JSON.stringify([...favs]));
+  }
+  window.toggleFav = function(id) {
+    const key = String(id);
+    if (favs.has(key)) favs.delete(key); else favs.add(key);
+    saveFavs();
+    const m = markerById.get(key);
+    if (m) m.setIcon(makeIcon(m.p));
+    const btn = document.getElementById('fav-btn');
+    if (btn) { const on = favs.has(key); btn.textContent = on ? '❤️ Saved' : '🤍 Save'; }
+    if (currentFilter === 'saved') applyFilter('saved');
+  };
+
+  // ── Filter definitions ───────────────────────────────────────────────────
   const FILTERS = {
     all:     () => true,
     camping: f => ['st','stM','stC','sty','styC'].includes(f.p.icon),
@@ -200,10 +236,11 @@
     food:    f => f.p.category === 'food',
     sights:  f => f.p.category === 'sights',
     top:     f => f.p.rank === 'S' || f.p.rank === 'A',
+    saved:   f => favs.has(String(f.p.id)),
     caution: f => f.p.icon === 'df',
   };
 
-  let map, cluster, allMarkers = [], currentFilter = 'all';
+  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all';
 
   // ── Init map ─────────────────────────────────────────────────────────────
   map = L.map('map', {
@@ -238,6 +275,21 @@
     },
   });
 
+  // ── Marker icon factory ──────────────────────────────────────────────────
+  function makeIcon(p) {
+    let dot = p.emoji || '📍';
+    if (p.icon === 'hs-sw' || p.icon === 'hs-M-sw' || p.icon === 'hs-K-sw') dot = '🚿';
+    else if (p.category === 'onsen') dot = '♨';
+    else if (p.category === 'camping') dot = p.icon === 'stC' ? '🏕' : p.icon === 'stM' ? '🏪' : '🅿';
+    else if (p.icon === 'stSAPA') dot = '🛣';
+    else if (p.category === 'food') dot = '🍜';
+    const ring = favs.has(String(p.id)) ? ';box-shadow:0 0 0 2.5px #e91e63,0 2px 6px rgba(0,0,0,0.28)' : '';
+    return L.divIcon({
+      html: `<div class="mk" style="background:${p.color}${ring}">${dot}</div>`,
+      className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+    });
+  }
+
   // ── Load data ────────────────────────────────────────────────────────────
   fetch('/spots.json')
     .then(r => r.json())
@@ -245,25 +297,11 @@
       allMarkers = geojson.features.map(feature => {
         const p = feature.properties;
         const [lng, lat] = feature.geometry.coordinates;
-
-        // Pick a good emoji for the dot
-        let dot = p.emoji || '📍';
-        // Simplify multi-char emoji to single char for dot readability
-        if (p.icon === 'hs-sw' || p.icon === 'hs-M-sw' || p.icon === 'hs-K-sw') dot = '🚿';
-        else if (p.category === 'onsen') dot = '♨';
-        else if (p.category === 'camping') dot = p.icon === 'stC' ? '🏕' : p.icon === 'stM' ? '🏪' : '🅿';
-        else if (p.icon === 'stSAPA') dot = '🛣';
-        else if (p.category === 'food') dot = '🍜';
-
-        const icon = L.divIcon({
-          html: `<div class="mk" style="background:${p.color}">${dot}</div>`,
-          className: '', iconSize: [30, 30], iconAnchor: [15, 15],
-        });
-
-        const marker = L.marker([lat, lng], { icon });
+        const marker = L.marker([lat, lng], { icon: makeIcon(p) });
         marker.f = feature;
         marker.p = p;
         marker.on('click', () => openSheet(feature));
+        markerById.set(String(p.id), marker);
         return marker;
       });
 
@@ -283,7 +321,17 @@
     const fn = FILTERS[key];
     const filtered = allMarkers.filter(m => fn(m));
 
-    // Add in chunks to keep UI responsive
+    if (key === 'saved' && filtered.length === 0 && allMarkers.length > 0) {
+      scroll.innerHTML = `
+        <div style="text-align:center;padding:32px 20px;color:#aaa">
+          <div style="font-size:36px;margin-bottom:12px">🤍</div>
+          <div style="font-size:15px;font-weight:700;color:#555;margin-bottom:6px">No saved spots yet</div>
+          <div style="font-size:13px">Tap 🤍 on any spot to save it here</div>
+        </div>`;
+      sheet.classList.add('open');
+      overlay.classList.add('on');
+    }
+
     const CHUNK = 300;
     let i = 0;
     function addChunk() {
@@ -312,11 +360,7 @@
 
   // ── Locate ───────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
-    if (!navigator.geolocation) return;
-    navigator.geolocation.getCurrentPosition(
-      pos => map.setView([pos.coords.latitude, pos.coords.longitude], 13),
-      () => alert('Could not get your location.')
-    );
+    requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
   });
 
   // ── Bottom sheet ─────────────────────────────────────────────────────────
@@ -342,6 +386,11 @@
     if (p.elevation)      tags.push(`<span class="tag t-elev">🏔 ${p.elevation}m</span>`);
 
     const rows = [];
+    if (gps.pos) {
+      const km = distKm(gps.pos.latitude, gps.pos.longitude, lat, lng);
+      const label = km < 1 ? '< 1 km' : `${Math.round(km)} km`;
+      rows.push(`<div class="s-info-row"><span class="s-info-lbl">📏 Distance</span><span>${label} away</span></div>`);
+    }
     if (p.price)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">💴 Cost</span><span>From ¥${p.price.toLocaleString()}</span></div>`);
     if (p.hours)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">🕐 Hours</span><span>${esc(p.hours)}</span></div>`);
     if (p.amenities && p.amenities.length > 0)
@@ -350,6 +399,7 @@
 
     const googleUrl = `https://www.google.com/maps?q=${lat},${lng}&t=h&z=15`;
     const navUrl    = `geo:${lat},${lng}?q=${lat},${lng}`;
+    const isFav     = favs.has(String(p.id));
 
     scroll.innerHTML = `
       <div class="s-cat">${esc(p.emoji)} ${esc(p.label)}</div>
@@ -364,8 +414,9 @@
         <div class="s-ja-text">${esc(p.desc_ja)}</div>
       ` : ''}
       <div class="s-actions">
-        <button class="btn btn-maps" onclick="window.open('${googleUrl}','_blank')">🗺 Google Maps</button>
-        <button class="btn btn-nav"  onclick="window.location.href='${navUrl}'">⬆ Navigate</button>
+        <button id="fav-btn" class="btn btn-fav" onclick="toggleFav(${p.id})">${isFav ? '❤️ Saved' : '🤍 Save'}</button>
+        <button class="btn btn-maps" onclick="window.open('${googleUrl}','_blank')">🗺 Maps</button>
+        <button class="btn btn-nav"  onclick="window.location.href='${navUrl}'">⬆ Nav</button>
       </div>
     `;
 
@@ -381,7 +432,6 @@
   overlay.addEventListener('click', closeSheet);
   document.getElementById('sheet-handle-area').addEventListener('click', closeSheet);
 
-  // Swipe down to close
   let touchStartY = 0;
   sheet.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
   sheet.addEventListener('touchend', e => {
