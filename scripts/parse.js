@@ -7,8 +7,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const RAW_DIR = path.join(__dirname, '../raw-data');
-const OUT_FILE = path.join(__dirname, '../public/spots.json');
+const RAW_DIR          = path.join(__dirname, '../raw-data');
+const OUT_FILE         = path.join(__dirname, '../public/spots.json');
+const TRANSLATIONS_CSV = path.join(__dirname, '../translations.csv');
 
 const FILES = [
   { file: 'hokkaidou.js', region: 'Hokkaido',         region_ja: '北海道' },
@@ -202,6 +203,25 @@ function extractDesc(raw) {
   };
 }
 
+function loadTranslations() {
+  if (!fs.existsSync(TRANSLATIONS_CSV)) return new Map();
+  const xlat = new Map();
+  const lines = fs.readFileSync(TRANSLATIONS_CSV, 'utf8')
+    .replace(/^﻿/, '')   // strip BOM
+    .split('\n').slice(1);    // skip header row
+  for (const line of lines) {
+    const fi = line.indexOf(',');
+    if (fi < 0) continue;
+    const rest = line.slice(fi + 1);
+    const si = rest.indexOf(',');
+    if (si < 0) continue;
+    const title_ja = rest.slice(0, si).replace(/^"|"$/g, '');
+    const title_en = rest.slice(si + 1).replace(/^"|"$/g, '').trim();
+    if (title_ja && title_en) xlat.set(title_ja, title_en);
+  }
+  return xlat;
+}
+
 function parseFile(content) {
   const cleaned = content.replace(/<!--[\s\S]*?-->/g, '').trim();
   const ctx = {};
@@ -214,6 +234,9 @@ function parseFile(content) {
 }
 
 function main() {
+  const xlat = loadTranslations();
+  if (xlat.size > 0) console.log(`  ${xlat.size} translations loaded from CSV\n`);
+
   const features = [];
 
   for (const { file, region, region_ja } of FILES) {
@@ -229,6 +252,13 @@ function main() {
       const [lat, lng] = spot.pos;
       const iconInfo = ICON_MAP[spot.icon] || DEFAULT_ICON;
       const titleInfo = parseTitle(spot.title);
+
+      // Apply translation lookup — preserve rank/status prefix already in title_en
+      if (xlat.has(titleInfo.title_ja)) {
+        const prefix = (titleInfo.title_en.match(/^(\[[^\]]+\]\s*)+/) || [''])[0];
+        titleInfo.title_en = prefix + xlat.get(titleInfo.title_ja);
+      }
+
       const descInfo = extractDesc(spot.desc);
 
       features.push({

@@ -1,3 +1,5 @@
 node_modules/
 .DS_Store
 spots-export.csv
+.translate-progress.json
+package-lock.json
