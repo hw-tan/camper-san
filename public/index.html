@@ -146,6 +146,27 @@
     #loading-text { font-size: 15px; color: #888; font-weight: 500; }
     @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
 
+    /* ── Offline badge ── */
+    #offline-tag {
+      display: none; font-size: 10px; font-weight: 800; letter-spacing: 0.4px;
+      background: #ff5722; color: white; padding: 3px 8px; border-radius: 999px;
+    }
+    #offline-tag.on { display: inline-block; }
+
+    /* ── Update banner ── */
+    #update-banner {
+      display: none; position: fixed; top: 54px; left: 0; right: 0; z-index: 1015;
+      background: #1a5c38; color: white; font-size: 13px; font-weight: 600;
+      padding: 10px 16px; align-items: center; justify-content: center; gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    #update-banner.on { display: flex; }
+    #update-reload {
+      padding: 4px 14px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.8);
+      background: transparent; color: white; font-size: 12px; font-weight: 700;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+    }
+
     /* ── Search ── */
     #search-wrap { display: none; flex: 1; align-items: center; gap: 8px; }
     #topbar.search-active #logo { display: none; }
@@ -254,6 +275,7 @@
     <input id="search-input" type="search" placeholder="Search spots, regions…" autocomplete="off" autocorrect="off" autocapitalize="off">
   </div>
   <div id="topbar-right">
+    <span id="offline-tag">OFFLINE</span>
     <span id="spot-count"></span>
     <button class="icon-btn" id="btn-search" title="Search">🔍</button>
     <button class="icon-btn" id="btn-near-me" title="Near Me">🎯</button>
@@ -271,6 +293,11 @@
   <button class="chip" data-filter="top">⭐ A/S Rank</button>
   <button class="chip" data-filter="saved">❤️ Saved</button>
   <button class="chip" data-filter="caution">⚠️ Caution</button>
+</div>
+
+<div id="update-banner">
+  🔄 Update ready
+  <button id="update-reload">Reload</button>
 </div>
 
 <div id="radius-badge"></div>
@@ -691,6 +718,37 @@
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+})();
+</script>
+<script>
+// ── Service Worker registration ──────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const sw = reg.installing;
+      sw.addEventListener('statechange', () => {
+        if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+          document.getElementById('update-banner').classList.add('on');
+        }
+      });
+    });
+  });
+
+  document.getElementById('update-reload').addEventListener('click', () => {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg?.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+    });
+    navigator.serviceWorker.addEventListener('controllerchange', () => location.reload());
+  });
+}
+
+// ── Offline indicator ────────────────────────────────────────────────────
+(function () {
+  const tag = document.getElementById('offline-tag');
+  function sync() { tag.classList.toggle('on', !navigator.onLine); }
+  window.addEventListener('online', sync);
+  window.addEventListener('offline', sync);
+  sync();
 })();
 </script>
 </body>
