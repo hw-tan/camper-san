@@ -41,28 +41,42 @@
     }
     .icon-btn:active { background: #ddd; }
 
-    /* ── Filter bar ── */
-    #filter-bar {
-      position: fixed; bottom: 0; left: 0; right: 0; z-index: 1010;
-      background: rgba(255,255,255,0.96);
-      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      padding: 10px 12px 12px;
-      display: flex; gap: 7px;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
-      scroll-snap-type: x mandatory;
-      box-shadow: 0 -1px 8px rgba(0,0,0,0.1);
+    /* ── Filter panel ── */
+    #btn-filter { position: relative; }
+    #filter-badge {
+      position: absolute; top: 4px; right: 4px;
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #2d7a4f; border: 1.5px solid white; display: none;
     }
-    #filter-bar::-webkit-scrollbar { display: none; }
-    .chip {
-      flex-shrink: 0; scroll-snap-align: start;
-      padding: 7px 14px; border-radius: 999px;
+    #filter-badge.on { display: block; }
+    #filter-panel {
+      position: fixed; top: 54px; left: 0; right: 0; z-index: 1009;
+      background: rgba(255,255,255,0.98);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      padding: 14px 14px 16px;
+      transform: translateY(-6px); opacity: 0; pointer-events: none;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+    #filter-panel.open { transform: translateY(0); opacity: 1; pointer-events: auto; }
+    .fp-label { font-size: 10px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 9px; }
+    .fp-chips { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+    .fp-chip {
+      padding: 7px 13px; border-radius: 999px;
       border: 1.5px solid #e0e0e0; background: white;
       font-size: 13px; font-weight: 600; cursor: pointer;
       white-space: nowrap; color: #444;
       transition: all 0.15s; -webkit-tap-highlight-color: transparent;
     }
-    .chip.active { background: #2d7a4f; border-color: #2d7a4f; color: white; }
-    .chip:active { opacity: 0.7; }
+    .fp-chip.active { background: #2d7a4f; border-color: #2d7a4f; color: white; }
+    .fp-chip:active { opacity: 0.7; }
+    .fp-divider { height: 1px; background: #f0f0f0; margin: 2px 0 12px; }
+    .fp-clear {
+      width: 100%; padding: 10px; border-radius: 12px; border: none;
+      background: #f0f0f0; font-size: 13px; font-weight: 600; color: #777;
+      cursor: pointer; margin-top: 2px; -webkit-tap-highlight-color: transparent;
+    }
+    .fp-clear:active { background: #e8e8e8; }
 
     /* ── Overlay ── */
     #overlay { display: none; position: fixed; inset: 0; z-index: 990; }
@@ -70,7 +84,7 @@
 
     /* ── Bottom sheet ── */
     #sheet {
-      position: fixed; left: 0; right: 0; bottom: 58px; z-index: 1000;
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
       background: white; border-radius: 20px 20px 0 0;
       box-shadow: 0 -4px 24px rgba(0,0,0,0.18);
       max-height: 65vh; display: flex; flex-direction: column;
@@ -245,7 +259,7 @@
 
     /* ── Toast ── */
     #toast {
-      display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+      display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
       z-index: 2000; background: #333; color: white;
       padding: 9px 18px; border-radius: 999px; font-size: 13px; font-weight: 600;
       pointer-events: none; white-space: nowrap;
@@ -254,8 +268,7 @@
 
     /* PWA safe areas */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
-      #filter-bar { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-      #sheet { bottom: calc(58px + env(safe-area-inset-bottom)); }
+      #sheet { bottom: env(safe-area-inset-bottom); }
     }
   </style>
 </head>
@@ -277,22 +290,30 @@
   <div id="topbar-right">
     <span id="offline-tag">OFFLINE</span>
     <span id="spot-count"></span>
+    <button class="icon-btn" id="btn-filter" title="Filters">🎛️<span id="filter-badge"></span></button>
     <button class="icon-btn" id="btn-search" title="Search">🔍</button>
     <button class="icon-btn" id="btn-near-me" title="Near Me">🎯</button>
     <button class="icon-btn" id="btn-locate" title="My location">📍</button>
   </div>
 </div>
 
-<div id="filter-bar">
-  <button class="chip active" data-filter="all">All</button>
-  <button class="chip" data-filter="camping">🅿️ Camp Spots</button>
-  <button class="chip" data-filter="onsen">♨️ Hot Springs</button>
-  <button class="chip" data-filter="highway">🛣️ Highway</button>
-  <button class="chip" data-filter="food">🍜 Food</button>
-  <button class="chip" data-filter="sights">🗺️ Sights</button>
-  <button class="chip" data-filter="top">⭐ A/S Rank</button>
-  <button class="chip" data-filter="saved">❤️ Saved</button>
-  <button class="chip" data-filter="caution">⚠️ Caution</button>
+<div id="filter-panel">
+  <div class="fp-label">Place types</div>
+  <div class="fp-chips">
+    <button class="fp-chip" data-tag="overnight">🌙 Overnight</button>
+    <button class="fp-chip" data-tag="onsen">♨️ Hot Springs</button>
+    <button class="fp-chip" data-tag="highway">🛣️ Highway</button>
+    <button class="fp-chip" data-tag="nature">🌿 Nature</button>
+    <button class="fp-chip" data-tag="food">🍜 Food</button>
+    <button class="fp-chip" data-tag="paid">💰 Paid</button>
+    <button class="fp-chip" data-tag="caution">⚠️ Caution</button>
+  </div>
+  <div class="fp-divider"></div>
+  <div class="fp-chips">
+    <button class="fp-chip" data-tag="top">⭐ A/S Rank</button>
+    <button class="fp-chip" data-tag="saved">❤️ Saved</button>
+  </div>
+  <button class="fp-clear" id="fp-clear">✕  Clear all filters</button>
 </div>
 
 <div id="update-banner">
@@ -360,33 +381,42 @@
     if (m) m.setIcon(makeIcon(m.p));
     const btn = document.getElementById('fav-btn');
     if (btn) { const on = favs.has(key); btn.textContent = on ? '❤️ Saved' : '🤍 Save'; }
-    if (currentFilter === 'saved') applyFilter('saved');
+    if (activeTags.has('saved')) applyFilters();
   };
 
   // ── Filter definitions ───────────────────────────────────────────────────
-  const FILTERS = {
-    all:     () => true,
-    camping: f => ['st','stM','stC','sty','styC'].includes(f.p.icon),
-    onsen:   f => ['on','on-Me','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-K-sw','hs-KS','hsS'].includes(f.p.icon),
-    highway: f => ['stSAPA','hs-K-sw','hs-KS'].includes(f.p.icon),
-    food:    f => f.p.category === 'food',
-    sights:  f => f.p.category === 'sights',
-    top:     f => f.p.rank === 'S' || f.p.rank === 'A',
-    saved:   f => favs.has(String(f.p.id)),
-    caution: f => f.p.icon === 'df',
+  const TAG_FNS = {
+    overnight: m => ['st','stM','stC','sty','styC','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-KS','hsS','stSAPA'].includes(m.p.icon),
+    onsen:     m => ['on','on-Me','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-K-sw','hs-KS','hsS'].includes(m.p.icon),
+    highway:   m => ['stSAPA','hs-K-sw','hs-KS'].includes(m.p.icon),
+    nature:    m => m.p.category === 'sights',
+    food:      m => m.p.category === 'food',
+    paid:      m => m.p.paid === true || ['sty','styC'].includes(m.p.icon),
+    caution:   m => m.p.icon === 'df',
+    top:       m => m.p.rank === 'S' || m.p.rank === 'A',
+    saved:     m => favs.has(String(m.p.id)),
   };
 
-  let map, cluster, allMarkers = [], markerById = new Map(), currentFilter = 'all', nearMeRadius = null;
+  let map, cluster, allMarkers = [], markerById = new Map(), activeTags = new Set(), nearMeRadius = null;
 
-  // ── Visible set (chip filter + radius) ──────────────────────────────────
+  // ── Visible set (active tags + radius) ──────────────────────────────────
   function getVisible() {
-    const fn = FILTERS[currentFilter];
-    if (!nearMeRadius || !gps.pos) return allMarkers.filter(m => fn(m));
-    return allMarkers.filter(m => {
-      if (!fn(m)) return false;
-      const [lng, lat] = m.f.geometry.coordinates;
-      return distKm(gps.pos.latitude, gps.pos.longitude, lat, lng) <= nearMeRadius;
-    });
+    let markers = allMarkers;
+    if (activeTags.size > 0) {
+      markers = markers.filter(m => {
+        for (const id of activeTags) {
+          if (TAG_FNS[id] && !TAG_FNS[id](m)) return false;
+        }
+        return true;
+      });
+    }
+    if (nearMeRadius && gps.pos) {
+      markers = markers.filter(m => {
+        const [lng, lat] = m.f.geometry.coordinates;
+        return distKm(gps.pos.latitude, gps.pos.longitude, lat, lng) <= nearMeRadius;
+      });
+    }
+    return markers;
   }
 
   // ── Init map ─────────────────────────────────────────────────────────────
@@ -452,7 +482,7 @@
         return marker;
       });
 
-      applyFilter('all');
+      applyFilters();
       document.getElementById('loading').style.display = 'none';
       updateCount();
     })
@@ -461,13 +491,16 @@
     });
 
   // ── Filters ──────────────────────────────────────────────────────────────
-  function applyFilter(key) {
-    currentFilter = key;
-    cluster.clearLayers();
+  function toggleTag(id) {
+    if (activeTags.has(id)) activeTags.delete(id); else activeTags.add(id);
+    applyFilters();
+  }
 
+  function applyFilters() {
+    cluster.clearLayers();
     const filtered = getVisible();
 
-    if (key === 'saved' && filtered.length === 0 && allMarkers.length > 0) {
+    if (activeTags.has('saved') && filtered.length === 0 && allMarkers.length > 0) {
       scroll.innerHTML = `
         <div style="text-align:center;padding:32px 20px;color:#aaa">
           <div style="font-size:36px;margin-bottom:12px">🤍</div>
@@ -490,7 +523,8 @@
 
     if (!map.hasLayer(cluster)) map.addLayer(cluster);
 
-    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.filter === key));
+    document.querySelectorAll('.fp-chip').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
+    document.getElementById('filter-badge').classList.toggle('on', activeTags.size > 0);
     updateCount();
   }
 
@@ -498,8 +532,30 @@
     document.getElementById('spot-count').textContent = getVisible().length.toLocaleString() + ' spots';
   }
 
-  document.querySelectorAll('.chip').forEach(chip => {
-    chip.addEventListener('click', () => applyFilter(chip.dataset.filter));
+  // ── Filter panel ─────────────────────────────────────────────────────────
+  function closeFilterPanel() {
+    document.getElementById('filter-panel').classList.remove('open');
+  }
+
+  document.getElementById('btn-filter').addEventListener('click', e => {
+    e.stopPropagation();
+    document.getElementById('filter-panel').classList.toggle('open');
+  });
+
+  document.querySelectorAll('.fp-chip').forEach(chip => {
+    chip.addEventListener('click', () => toggleTag(chip.dataset.tag));
+  });
+
+  document.getElementById('fp-clear').addEventListener('click', () => {
+    activeTags.clear();
+    applyFilters();
+  });
+
+  document.addEventListener('click', e => {
+    const panel = document.getElementById('filter-panel');
+    if (panel && !panel.contains(e.target) && e.target.id !== 'btn-filter') {
+      panel.classList.remove('open');
+    }
   });
 
   // ── Locate ───────────────────────────────────────────────────────────────
@@ -530,7 +586,7 @@
     } else {
       radiusBadge.classList.remove('on');
     }
-    applyFilter(currentFilter);
+    applyFilters();
   }
 
   document.getElementById('btn-near-me').addEventListener('click', () => {
@@ -635,6 +691,7 @@
     topbar.classList.add('search-active');
     radiusBadge.classList.remove('on');
     closeSheet();
+    closeFilterPanel();
     searchInput.focus();
   }
 
@@ -658,10 +715,8 @@
     const q = searchInput.value.trim().toLowerCase();
     if (!q) { searchResults.classList.remove('on'); return; }
 
-    const chipFn = FILTERS[currentFilter];
     const hits = [];
-    for (const m of allMarkers) {
-      if (!chipFn(m)) continue;
+    for (const m of getVisible()) {
       const p = m.p;
       if ((p.title_en || '').toLowerCase().includes(q) ||
           (p.title_ja || '').includes(q) ||
@@ -701,7 +756,10 @@
     searchResults.classList.add('on');
   }
 
-  map.on('click', () => { if (topbar.classList.contains('search-active')) closeSearch(); });
+  map.on('click', () => {
+    if (topbar.classList.contains('search-active')) closeSearch();
+    closeFilterPanel();
+  });
 
   // ── Toast ────────────────────────────────────────────────────────────────
   function showToast(msg) {
