@@ -1,5 +1,5 @@
-const CACHE      = 'campersan-v1';
-const TILE_CACHE = 'campersan-tiles-v1';
+const CACHE      = 'campersan-v2';
+const TILE_CACHE = 'campersan-tiles-v2';
 const TILE_LIMIT = 500;
 
 const PRECACHE = [
