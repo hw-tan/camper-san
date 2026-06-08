@@ -1,5 +1,5 @@
-const CACHE      = 'campersan-v2';
-const TILE_CACHE = 'campersan-tiles-v2';
+const CACHE      = 'campersan-v3';
+const TILE_CACHE = 'campersan-tiles-v3';
 const TILE_LIMIT = 500;
 
 const PRECACHE = [
@@ -49,9 +49,9 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // spots.json — stale-while-revalidate: serve cached instantly, update in background
+  // spots.json — network-first: always fetch fresh when online, fall back to cache offline
   if (url.pathname === '/spots.json') {
-    e.respondWith(staleRevalidate(e.request));
+    e.respondWith(networkFirst(e.request));
     return;
   }
 
