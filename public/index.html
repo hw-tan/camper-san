@@ -395,7 +395,7 @@
     if (m) m.setIcon(makeIcon(m.p));
     const btn = document.getElementById('fav-btn');
     if (btn) { const on = favs.has(key); btn.textContent = on ? '❤️ Saved' : '🤍 Save'; }
-    if (activeTags.has('saved')) applyFilters();
+    applyFilters();
   };
 
   // ── Filter definitions ───────────────────────────────────────────────────
@@ -411,7 +411,7 @@
     saved:     m => favs.has(String(m.p.id)),
   };
 
-  let map, cluster, allMarkers = [], markerById = new Map(), activeTags = new Set(), nearMeRadius = null;
+  let map, cluster, favLayer, allMarkers = [], markerById = new Map(), activeTags = new Set(), nearMeRadius = null;
 
   // ── Visible set (active tags + radius) ──────────────────────────────────
   function getVisible() {
@@ -466,6 +466,9 @@
     },
   });
 
+  // Favorited markers bypass clustering and render on a plain layer above the cluster
+  favLayer = L.layerGroup().addTo(map);
+
   // ── Marker icon factory ──────────────────────────────────────────────────
   function makeIcon(p) {
     let dot = p.emoji || '📍';
@@ -512,6 +515,7 @@
 
   function applyFilters() {
     cluster.clearLayers();
+    favLayer.clearLayers();
     const filtered = getVisible();
 
     if (activeTags.has('saved') && filtered.length === 0 && allMarkers.length > 0) {
@@ -525,13 +529,18 @@
       overlay.classList.add('on');
     }
 
+    // Favourites bypass the cluster and render directly on the map
+    const favMarkers   = filtered.filter(m => favs.has(String(m.p.id)));
+    const otherMarkers = filtered.filter(m => !favs.has(String(m.p.id)));
+    favMarkers.forEach(m => favLayer.addLayer(m));
+
     const CHUNK = 300;
     let i = 0;
     function addChunk() {
-      cluster.addLayers(filtered.slice(i, i + CHUNK));
+      cluster.addLayers(otherMarkers.slice(i, i + CHUNK));
       i += CHUNK;
       updateCount();
-      if (i < filtered.length) setTimeout(addChunk, 30);
+      if (i < otherMarkers.length) setTimeout(addChunk, 30);
     }
     addChunk();
 
