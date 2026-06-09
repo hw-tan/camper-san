@@ -34,8 +34,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // OpenFreeMap vector tiles — cache on access, LRU-trim to TILE_LIMIT
-  if (url.hostname.endsWith('openfreemap.org')) {
+  // Vector map tiles (CartoDB, OpenFreeMap) — cache on access, LRU-trim to TILE_LIMIT
+  if (url.hostname.endsWith('cartocdn.com') || url.hostname.endsWith('openfreemap.org')) {
     e.respondWith(handleTile(e.request));
     return;
   }
