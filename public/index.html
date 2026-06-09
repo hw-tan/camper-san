@@ -40,6 +40,8 @@
       transition: background 0.15s; -webkit-tap-highlight-color: transparent;
     }
     .icon-btn:active { background: #ddd; }
+    #btn-lang { font-size: 11px; font-weight: 800; letter-spacing: 0.3px; }
+    #btn-lang.ja { background: #fff3e0; color: #e65100; }
 
     /* ── Filter panel ── */
     #btn-filter { position: relative; }
@@ -290,6 +292,7 @@
   <div id="topbar-right">
     <span id="offline-tag">OFFLINE</span>
     <span id="spot-count"></span>
+    <button class="icon-btn" id="btn-lang" title="Toggle language">EN</button>
     <button class="icon-btn" id="btn-filter" title="Filters">🎛️<span id="filter-badge"></span></button>
     <button class="icon-btn" id="btn-search" title="Search">🔍</button>
     <button class="icon-btn" id="btn-near-me" title="Near Me">🎯</button>
@@ -350,6 +353,17 @@
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
 (() => {
+  // ── Language preference ──────────────────────────────────────────────────
+  let lang = localStorage.getItem('campersan_lang') || 'en';
+  function displayTitle(p) { return lang === 'ja' ? (p.title_ja || p.title_en || '') : (p.title_en || p.title_ja || ''); }
+  function displayTitleAlt(p) { return lang === 'ja' ? (p.title_en || '') : (p.title_ja || ''); }
+  function applyLangBtn() {
+    const btn = document.getElementById('btn-lang');
+    btn.textContent = lang === 'ja' ? 'JA' : 'EN';
+    btn.classList.toggle('ja', lang === 'ja');
+  }
+  applyLangBtn();
+
   // ── GPS session cache ────────────────────────────────────────────────────
   const gps = { pos: null };
   function requestGPS(onSuccess, onError) {
@@ -558,6 +572,13 @@
     }
   });
 
+  // ── Language toggle ──────────────────────────────────────────────────────
+  document.getElementById('btn-lang').addEventListener('click', () => {
+    lang = lang === 'en' ? 'ja' : 'en';
+    localStorage.setItem('campersan_lang', lang);
+    applyLangBtn();
+  });
+
   // ── Locate ───────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
     requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
@@ -646,8 +667,8 @@
 
     scroll.innerHTML = `
       <div class="s-cat">${esc(p.emoji)} ${esc(p.label)}</div>
-      <div class="s-title-en">${esc(p.title_en || p.title_ja || '')}</div>
-      <div class="s-title-ja">${esc(p.title_ja || '')}</div>
+      <div class="s-title-en">${esc(displayTitle(p))}</div>
+      <div class="s-title-ja">${esc(displayTitleAlt(p))}</div>
       ${tags.length ? `<div class="s-tags">${tags.join('')}</div>` : ''}
       <div class="s-info">${rows.join('')}</div>
       ${p.desc_en ? `<div class="s-en-desc">${esc(p.desc_en)}</div>` : ''}
@@ -737,7 +758,7 @@
         return `<div class="sr" data-id="${p.id}">
           <span class="sr-dot">${p.emoji || '📍'}</span>
           <div class="sr-body">
-            <div class="sr-name">${esc(p.title_en || p.title_ja || '')}</div>
+            <div class="sr-name">${esc(displayTitle(p))}</div>
             <div class="sr-meta">${esc(p.region)} · ${esc(p.label)}</div>
           </div>
           ${rank}

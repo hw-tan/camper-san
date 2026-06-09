@@ -9,7 +9,8 @@ const vm = require('vm');
 
 const RAW_DIR          = path.join(__dirname, '../raw-data');
 const OUT_FILE         = path.join(__dirname, '../public/spots.json');
-const TRANSLATIONS_CSV = path.join(__dirname, '../translations.csv');
+const TRANSLATIONS_CSV      = path.join(__dirname, '../translations.csv');
+const DESC_TRANSLATIONS_CSV = path.join(__dirname, '../desc-translations.csv');
 
 const FILES = [
   { file: 'hokkaidou.js', region: 'Hokkaido',         region_ja: '北海道' },
@@ -222,6 +223,41 @@ function loadTranslations() {
   return xlat;
 }
 
+function parseCSVPairs(text) {
+  const map = new Map();
+  let i = 0, inQ = false, cell = '', colIdx = 0, key = '';
+  const flush = () => {
+    if (colIdx === 0) { key = cell; }
+    else if (colIdx === 1 && key) { map.set(key, cell); }
+    cell = ''; colIdx++;
+  };
+  while (i < text.length) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') { inQ = false; }
+      else { cell += ch; }
+    } else {
+      if      (ch === '"')  { inQ = true; }
+      else if (ch === ',')  { flush(); }
+      else if (ch === '\n') { flush(); key = ''; colIdx = 0; }
+      else if (ch !== '\r') { cell += ch; }
+    }
+    i++;
+  }
+  if (cell !== '' || colIdx > 0) flush();
+  return map;
+}
+
+function loadDescTranslations() {
+  if (!fs.existsSync(DESC_TRANSLATIONS_CSV)) return new Map();
+  const raw = fs.readFileSync(DESC_TRANSLATIONS_CSV, 'utf8').replace(/^﻿/, '');
+  // Strip header row then parse
+  const bodyStart = raw.indexOf('\n');
+  const map = parseCSVPairs(bodyStart >= 0 ? raw.slice(bodyStart + 1) : raw);
+  return map;
+}
+
 function parseFile(content) {
   const cleaned = content.replace(/<!--[\s\S]*?-->/g, '').trim();
   const ctx = {};
@@ -234,8 +270,11 @@ function parseFile(content) {
 }
 
 function main() {
-  const xlat = loadTranslations();
-  if (xlat.size > 0) console.log(`  ${xlat.size} translations loaded from CSV\n`);
+  const xlat     = loadTranslations();
+  const descXlat = loadDescTranslations();
+  if (xlat.size > 0)     console.log(`  ${xlat.size} title translations loaded`);
+  if (descXlat.size > 0) console.log(`  ${descXlat.size} description translations loaded`);
+  if (xlat.size > 0 || descXlat.size > 0) console.log();
 
   const features = [];
 
@@ -256,10 +295,13 @@ function main() {
       // Apply translation lookup — preserve rank/status prefix already in title_en
       if (xlat.has(titleInfo.title_ja)) {
         const prefix = (titleInfo.title_en.match(/^(\[[^\]]+\]\s*)+/) || [''])[0];
-        titleInfo.title_en = prefix + xlat.get(titleInfo.title_ja);
+        const base   = xlat.get(titleInfo.title_ja).replace(/^(\[[^\]]+\]\s*)+/, '');
+        titleInfo.title_en = prefix + base;
       }
 
       const descInfo = extractDesc(spot.desc);
+      const spotId = String(features.length);
+      if (descXlat.has(spotId)) descInfo.desc_en = descXlat.get(spotId);
 
       features.push({
         type: 'Feature',
