@@ -1,16 +1,13 @@
-const CACHE      = 'campersan-v3';
-const TILE_CACHE = 'campersan-tiles-v3';
+const CACHE      = 'campersan-v4';
+const TILE_CACHE = 'campersan-tiles-v4';
 const TILE_LIMIT = 500;
 
 const PRECACHE = [
   '/',
   '/index.html',
   '/spots.json',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-  'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-  'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css',
-  'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css',
-  'https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js',
+  'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css',
+  'https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js',
 ];
 
 // Pre-cache on install; don't skipWaiting so the update flow can show a toast
@@ -37,13 +34,13 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // OSM map tiles — cache on access, LRU-trim to TILE_LIMIT
-  if (url.hostname.endsWith('.tile.openstreetmap.org')) {
+  // OpenFreeMap vector tiles — cache on access, LRU-trim to TILE_LIMIT
+  if (url.hostname.endsWith('openfreemap.org')) {
     e.respondWith(handleTile(e.request));
     return;
   }
 
-  // Versioned CDN assets (Leaflet, MarkerCluster) — cache-first, immutable
+  // Versioned CDN assets (MapLibre) — cache-first, immutable
   if (url.hostname === 'unpkg.com') {
     e.respondWith(cacheFirst(e.request));
     return;

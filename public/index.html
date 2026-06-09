@@ -9,9 +9,7 @@
   <meta name="theme-color" content="#2d7a4f">
   <title>Camper-San</title>
   <link rel="manifest" href="/manifest.json">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; }
@@ -105,9 +103,7 @@
     .s-title-en { font-size: 19px; font-weight: 800; color: #111; line-height: 1.25; margin-bottom: 3px; }
     .s-title-ja { font-size: 14px; color: #666; margin-bottom: 10px; }
     .s-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 10px; }
-    .tag {
-      padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700;
-    }
+    .tag { padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; }
     .t-s   { background: #FFF9C4; color: #F57F17; }
     .t-ss  { background: #FFD700; color: #5D4037; }
     .t-a   { background: #C8E6C9; color: #1B5E20; }
@@ -122,7 +118,7 @@
     .s-info { font-size: 13.5px; color: #333; line-height: 1.6; margin-bottom: 8px; }
     .s-info-row { display: flex; gap: 6px; margin-bottom: 3px; }
     .s-info-lbl { color: #aaa; width: 75px; flex-shrink: 0; font-size: 12px; }
-    .s-en-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 10px; }
+    .s-en-desc { font-size: 13px; color: #555; line-height: 1.7; margin-bottom: 10px; white-space: pre-wrap; }
     .s-ja-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 5px; }
     .s-ja-text {
       font-size: 12.5px; color: #777; line-height: 1.9;
@@ -141,16 +137,9 @@
     .btn-nav  { background: #2d7a4f; color: white; }
     .btn-fav  { background: #FCE4EC; color: #880E4F; }
 
-    /* Marker dots */
-    .mk {
-      width: 30px; height: 30px; border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; border: 2px solid rgba(255,255,255,0.9);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.28);
-    }
-
-    /* Leaflet zoom control position */
-    .leaflet-top.leaflet-right { top: 62px; }
+    /* MapLibre overrides */
+    .maplibregl-ctrl-top-right { top: 62px !important; }
+    .maplibregl-ctrl-attrib { font-size: 10px !important; }
 
     /* Loading */
     #loading {
@@ -331,7 +320,7 @@
 
 <div id="sheet">
   <div id="sheet-handle-area"><div id="sheet-handle"></div></div>
-  <div id="sheet-scroll" id="sheet-body"></div>
+  <div id="sheet-scroll"></div>
 </div>
 
 <div id="radius-picker">
@@ -349,13 +338,12 @@
 
 <div id="toast"></div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <script>
 (() => {
-  // ── Language preference ──────────────────────────────────────────────────
-  let lang = localStorage.getItem('campersan_lang') || 'en';
-  function displayTitle(p) { return lang === 'ja' ? (p.title_ja || p.title_en || '') : (p.title_en || p.title_ja || ''); }
+  // ── Language ─────────────────────────────────────────────────────────────
+  let lang = 'en';
+  function displayTitle(p)    { return lang === 'ja' ? (p.title_ja || p.title_en || '') : (p.title_en || p.title_ja || ''); }
   function displayTitleAlt(p) { return lang === 'ja' ? (p.title_en || '') : (p.title_ja || ''); }
   function applyLangBtn() {
     const btn = document.getElementById('btn-lang');
@@ -364,7 +352,7 @@
   }
   applyLangBtn();
 
-  // ── GPS session cache ────────────────────────────────────────────────────
+  // ── GPS ───────────────────────────────────────────────────────────────────
   const gps = { pos: null };
   function requestGPS(onSuccess, onError) {
     if (!navigator.geolocation) { if (onError) onError(); return; }
@@ -374,7 +362,7 @@
     );
   }
 
-  // ── Haversine distance (km) ──────────────────────────────────────────────
+  // ── Haversine ─────────────────────────────────────────────────────────────
   function distKm(lat1, lng1, lat2, lng2) {
     const R = 6371, r = x => x * Math.PI / 180;
     const dLat = r(lat2 - lat1), dLng = r(lng2 - lng1);
@@ -382,143 +370,192 @@
     return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
   }
 
-  // ── Favorites ────────────────────────────────────────────────────────────
+  // ── Favorites ─────────────────────────────────────────────────────────────
   let favs = new Set(JSON.parse(localStorage.getItem('campersan_favs') || '[]'));
-  function saveFavs() {
-    localStorage.setItem('campersan_favs', JSON.stringify([...favs]));
-  }
+  function saveFavs() { localStorage.setItem('campersan_favs', JSON.stringify([...favs])); }
   window.toggleFav = function(id) {
     const key = String(id);
     if (favs.has(key)) favs.delete(key); else favs.add(key);
     saveFavs();
-    const m = markerById.get(key);
-    if (m) m.setIcon(makeIcon(m.p));
     const btn = document.getElementById('fav-btn');
-    if (btn) { const on = favs.has(key); btn.textContent = on ? '❤️ Saved' : '🤍 Save'; }
+    if (btn) btn.textContent = favs.has(key) ? '❤️ Saved' : '🤍 Save';
     applyFilters();
   };
 
-  // ── Filter definitions ───────────────────────────────────────────────────
+  // ── Filter tag predicates ─────────────────────────────────────────────────
   const TAG_FNS = {
-    overnight: m => ['st','stM','stC','sty','styC','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-KS','hsS','stSAPA'].includes(m.p.icon),
-    onsen:     m => ['on','on-Me','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-K-sw','hs-KS','hsS'].includes(m.p.icon),
-    highway:   m => ['stSAPA','hs-K-sw','hs-KS'].includes(m.p.icon),
-    nature:    m => m.p.category === 'sights',
-    food:      m => m.p.category === 'food',
-    paid:      m => m.p.paid === true || ['sty','styC'].includes(m.p.icon),
-    caution:   m => m.p.icon === 'df',
-    top:       m => m.p.rank === 'S' || m.p.rank === 'A',
-    saved:     m => favs.has(String(m.p.id)),
+    overnight: f => ['st','stM','stC','sty','styC','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-KS','hsS','stSAPA'].includes(f.properties.icon),
+    onsen:     f => ['on','on-Me','hs','hs-M','hs-MS','hs-sw','hs-M-sw','hs-K-sw','hs-KS','hsS'].includes(f.properties.icon),
+    highway:   f => ['stSAPA','hs-K-sw','hs-KS'].includes(f.properties.icon),
+    nature:    f => f.properties.category === 'sights',
+    food:      f => f.properties.category === 'food',
+    paid:      f => f.properties.paid === true || ['sty','styC'].includes(f.properties.icon),
+    caution:   f => f.properties.icon === 'df',
+    top:       f => f.properties.rank === 'S' || f.properties.rank === 'A',
+    saved:     f => favs.has(String(f.properties.id)),
   };
 
-  let map, cluster, favLayer, allMarkers = [], markerById = new Map(), activeTags = new Set(), nearMeRadius = null;
+  let map, allFeatures = [], featureById = new Map(), activeTags = new Set(), nearMeRadius = null;
 
-  // ── Visible set (active tags + radius) ──────────────────────────────────
+  // ── Visible set ───────────────────────────────────────────────────────────
   function getVisible() {
-    let markers = allMarkers;
+    let features = allFeatures;
     if (activeTags.size > 0) {
-      markers = markers.filter(m => {
+      features = features.filter(f => {
         for (const id of activeTags) {
-          if (TAG_FNS[id] && !TAG_FNS[id](m)) return false;
+          if (TAG_FNS[id] && !TAG_FNS[id](f)) return false;
         }
         return true;
       });
     }
     if (nearMeRadius && gps.pos) {
-      markers = markers.filter(m => {
-        const [lng, lat] = m.f.geometry.coordinates;
+      features = features.filter(f => {
+        const [lng, lat] = f.geometry.coordinates;
         return distKm(gps.pos.latitude, gps.pos.longitude, lat, lng) <= nearMeRadius;
       });
     }
-    return markers;
+    return features;
   }
 
-  // ── Init map ─────────────────────────────────────────────────────────────
-  map = L.map('map', {
-    center: [36.5, 137.5],
+  // ── Map init ──────────────────────────────────────────────────────────────
+  map = new maplibregl.Map({
+    container: 'map',
+    style: 'https://tiles.openfreemap.org/styles/liberty',
+    center: [137.5, 36.5],
     zoom: 5,
-    zoomControl: false,
-    preferCanvas: true,
+    attributionControl: false,
   });
+  map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+  map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
-    maxZoom: 19,
-  }).addTo(map);
+  // ── GeoJSON sources and layers (set up after style loads) ─────────────────
+  function initMapLayers() {
+    // Non-favourite spots — clustered
+    map.addSource('spots', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+      cluster: true,
+      clusterMaxZoom: 10,
+      clusterRadius: 35,
+    });
 
-  L.control.zoom({ position: 'topright' }).addTo(map);
+    // Favourite spots — never clustered
+    map.addSource('favs', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
 
-  cluster = L.markerClusterGroup({
-    chunkedLoading: true,
-    chunkInterval: 200,
-    chunkDelay: 50,
-    maxClusterRadius: 20,
-    spiderfyOnMaxZoom: true,
-    showCoverageOnHover: false,
-    disableClusteringAtZoom: 11,
-    iconCreateFunction: c => {
-      const n = c.getChildCount();
-      const s = n < 10 ? 32 : n < 100 ? 38 : 44;
-      return L.divIcon({
-        html: `<div style="width:${s}px;height:${s}px;background:#2d7a4f;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:${s < 38 ? 12 : 13}px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${n}</div>`,
-        className: '', iconSize: [s, s], iconAnchor: [s/2, s/2],
-      });
-    },
-  });
+    // Cluster bubbles
+    map.addLayer({
+      id: 'clusters',
+      type: 'circle',
+      source: 'spots',
+      filter: ['has', 'point_count'],
+      paint: {
+        'circle-color': '#2d7a4f',
+        'circle-radius': ['step', ['get', 'point_count'], 16, 10, 20, 100, 25],
+        'circle-stroke-width': 3,
+        'circle-stroke-color': 'white',
+      },
+    });
 
-  // Favorited markers bypass clustering and render on a plain layer above the cluster
-  favLayer = L.layerGroup().addTo(map);
+    // Cluster count labels
+    map.addLayer({
+      id: 'cluster-count',
+      type: 'symbol',
+      source: 'spots',
+      filter: ['has', 'point_count'],
+      layout: {
+        'text-field': '{point_count_abbreviated}',
+        'text-size': 12,
+        'text-font': ['Noto Sans Bold', 'Arial Unicode MS Bold'],
+      },
+      paint: { 'text-color': 'white' },
+    });
 
-  // ── Marker icon factory ──────────────────────────────────────────────────
-  function makeIcon(p) {
-    let dot = p.emoji || '📍';
-    if (p.icon === 'hs-sw' || p.icon === 'hs-M-sw' || p.icon === 'hs-K-sw') dot = '🚿';
-    else if (p.category === 'onsen') dot = '♨';
-    else if (p.category === 'camping') dot = p.icon === 'stC' ? '🏕' : p.icon === 'stM' ? '🏪' : '🅿';
-    else if (p.icon === 'stSAPA') dot = '🛣';
-    else if (p.category === 'food') dot = '🍜';
-    const ring = favs.has(String(p.id)) ? ';box-shadow:0 0 0 2.5px #e91e63,0 2px 6px rgba(0,0,0,0.28)' : '';
-    return L.divIcon({
-      html: `<div class="mk" style="background:${p.color}${ring}">${dot}</div>`,
-      className: '', iconSize: [30, 30], iconAnchor: [15, 15],
+    // Individual spot dots
+    map.addLayer({
+      id: 'spots-points',
+      type: 'circle',
+      source: 'spots',
+      filter: ['!', ['has', 'point_count']],
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': 8,
+        'circle-stroke-width': 2,
+        'circle-stroke-color': 'white',
+      },
+    });
+
+    // Favourite dots — pink ring, always on top
+    map.addLayer({
+      id: 'fav-points',
+      type: 'circle',
+      source: 'favs',
+      paint: {
+        'circle-color': ['get', 'color'],
+        'circle-radius': 10,
+        'circle-stroke-width': 3,
+        'circle-stroke-color': '#e91e63',
+      },
+    });
+
+    // ── Interactions ──────────────────────────────────────────────────────
+    map.on('click', 'spots-points', e => {
+      const f = featureById.get(String(e.features[0].properties.id));
+      if (f) openSheet(f);
+    });
+    map.on('click', 'fav-points', e => {
+      const f = featureById.get(String(e.features[0].properties.id));
+      if (f) openSheet(f);
+    });
+    map.on('click', 'clusters', e => {
+      const feat = e.features[0];
+      map.getSource('spots').getClusterExpansionZoom(feat.properties.cluster_id)
+        .then(zoom => map.easeTo({ center: feat.geometry.coordinates, zoom }));
+    });
+    ['spots-points', 'fav-points', 'clusters'].forEach(id => {
+      map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', id, () => { map.getCanvas().style.cursor = ''; });
+    });
+
+    // Close panels when tapping empty map
+    map.on('click', e => {
+      const hit = map.queryRenderedFeatures(e.point, { layers: ['spots-points', 'fav-points', 'clusters'] });
+      if (hit.length) return;
+      if (topbar.classList.contains('search-active')) closeSearch();
+      closeFilterPanel();
     });
   }
 
-  // ── Load data ────────────────────────────────────────────────────────────
-  fetch('/spots.json')
-    .then(r => r.json())
-    .then(geojson => {
-      allMarkers = geojson.features.map(feature => {
-        const p = feature.properties;
-        const [lng, lat] = feature.geometry.coordinates;
-        const marker = L.marker([lat, lng], { icon: makeIcon(p) });
-        marker.f = feature;
-        marker.p = p;
-        marker.on('click', () => openSheet(feature));
-        markerById.set(String(p.id), marker);
-        return marker;
+  // ── Load data ─────────────────────────────────────────────────────────────
+  map.on('load', () => {
+    initMapLayers();
+    fetch('/spots.json')
+      .then(r => r.json())
+      .then(geojson => {
+        allFeatures = geojson.features;
+        allFeatures.forEach(f => featureById.set(String(f.properties.id), f));
+        applyFilters();
+        document.getElementById('loading').style.display = 'none';
+        updateCount();
+      })
+      .catch(() => {
+        document.getElementById('loading-text').textContent = 'Failed to load spots data.';
       });
+  });
 
-      applyFilters();
-      document.getElementById('loading').style.display = 'none';
-      updateCount();
-    })
-    .catch(() => {
-      document.getElementById('loading-text').textContent = 'Failed to load spots data.';
-    });
-
-  // ── Filters ──────────────────────────────────────────────────────────────
+  // ── Filters ───────────────────────────────────────────────────────────────
   function toggleTag(id) {
     if (activeTags.has(id)) activeTags.delete(id); else activeTags.add(id);
     applyFilters();
   }
 
   function applyFilters() {
-    cluster.clearLayers();
-    favLayer.clearLayers();
+    if (!map.getSource('spots')) return;
     const filtered = getVisible();
 
-    if (activeTags.has('saved') && filtered.length === 0 && allMarkers.length > 0) {
+    if (activeTags.has('saved') && filtered.length === 0 && allFeatures.length > 0) {
       scroll.innerHTML = `
         <div style="text-align:center;padding:32px 20px;color:#aaa">
           <div style="font-size:36px;margin-bottom:12px">🤍</div>
@@ -529,22 +566,10 @@
       overlay.classList.add('on');
     }
 
-    // Favourites bypass the cluster and render directly on the map
-    const favMarkers   = filtered.filter(m => favs.has(String(m.p.id)));
-    const otherMarkers = filtered.filter(m => !favs.has(String(m.p.id)));
-    favMarkers.forEach(m => favLayer.addLayer(m));
-
-    const CHUNK = 300;
-    let i = 0;
-    function addChunk() {
-      cluster.addLayers(otherMarkers.slice(i, i + CHUNK));
-      i += CHUNK;
-      updateCount();
-      if (i < otherMarkers.length) setTimeout(addChunk, 30);
-    }
-    addChunk();
-
-    if (!map.hasLayer(cluster)) map.addLayer(cluster);
+    const favFeats   = filtered.filter(f => favs.has(String(f.properties.id)));
+    const otherFeats = filtered.filter(f => !favs.has(String(f.properties.id)));
+    map.getSource('spots').setData({ type: 'FeatureCollection', features: otherFeats });
+    map.getSource('favs').setData({ type: 'FeatureCollection', features: favFeats });
 
     document.querySelectorAll('.fp-chip').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
     document.getElementById('filter-badge').classList.toggle('on', activeTags.size > 0);
@@ -555,45 +580,31 @@
     document.getElementById('spot-count').textContent = getVisible().length.toLocaleString() + ' spots';
   }
 
-  // ── Filter panel ─────────────────────────────────────────────────────────
-  function closeFilterPanel() {
-    document.getElementById('filter-panel').classList.remove('open');
-  }
+  // ── Filter panel ──────────────────────────────────────────────────────────
+  function closeFilterPanel() { document.getElementById('filter-panel').classList.remove('open'); }
 
   document.getElementById('btn-filter').addEventListener('click', e => {
     e.stopPropagation();
     document.getElementById('filter-panel').classList.toggle('open');
   });
-
   document.querySelectorAll('.fp-chip').forEach(chip => {
     chip.addEventListener('click', () => toggleTag(chip.dataset.tag));
   });
-
   document.getElementById('fp-clear').addEventListener('click', () => {
-    activeTags.clear();
-    applyFilters();
+    activeTags.clear(); applyFilters();
   });
-
   document.addEventListener('click', e => {
     const panel = document.getElementById('filter-panel');
-    if (panel && !panel.contains(e.target) && e.target.id !== 'btn-filter') {
+    if (panel && !panel.contains(e.target) && e.target.id !== 'btn-filter')
       panel.classList.remove('open');
-    }
   });
 
-  // ── Language toggle ──────────────────────────────────────────────────────
-  document.getElementById('btn-lang').addEventListener('click', () => {
-    lang = lang === 'en' ? 'ja' : 'en';
-    localStorage.setItem('campersan_lang', lang);
-    applyLangBtn();
-  });
-
-  // ── Locate ───────────────────────────────────────────────────────────────
+  // ── Locate ────────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
-    requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
+    requestGPS(c => map.easeTo({ center: [c.longitude, c.latitude], zoom: 13 }));
   });
 
-  // ── Near Me ──────────────────────────────────────────────────────────────
+  // ── Near Me ───────────────────────────────────────────────────────────────
   const radiusPicker = document.getElementById('radius-picker');
   const radiusBadge  = document.getElementById('radius-badge');
 
@@ -611,8 +622,14 @@
       radiusBadge.textContent = `📍 Within ${km} km  ×`;
       radiusBadge.classList.add('on');
       const visible = getVisible();
-      if (visible.length > 0)
-        map.fitBounds(L.latLngBounds(visible.map(m => m.getLatLng())), { padding: [56, 56] });
+      if (visible.length > 0) {
+        const lngs = visible.map(f => f.geometry.coordinates[0]);
+        const lats = visible.map(f => f.geometry.coordinates[1]);
+        map.fitBounds(
+          [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+          { padding: 56 }
+        );
+      }
     } else {
       radiusBadge.classList.remove('on');
     }
@@ -623,20 +640,14 @@
     if (gps.pos) { showRadiusPicker(); return; }
     requestGPS(() => showRadiusPicker(), () => showToast('Location access needed for Near Me'));
   });
-
   radiusBadge.addEventListener('click', () => showRadiusPicker());
-
   radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
     btn.addEventListener('click', () => applyNearMe(parseInt(btn.dataset.km)));
   });
-
   document.getElementById('radius-clear').addEventListener('click', () => applyNearMe(null));
+  radiusPicker.addEventListener('click', e => { if (e.target === radiusPicker) radiusPicker.classList.remove('on'); });
 
-  radiusPicker.addEventListener('click', e => {
-    if (e.target === radiusPicker) radiusPicker.classList.remove('on');
-  });
-
-  // ── Bottom sheet ─────────────────────────────────────────────────────────
+  // ── Bottom sheet ──────────────────────────────────────────────────────────
   const sheet   = document.getElementById('sheet');
   const scroll  = document.getElementById('sheet-scroll');
   const overlay = document.getElementById('overlay');
@@ -661,13 +672,12 @@
     const rows = [];
     if (gps.pos) {
       const km = distKm(gps.pos.latitude, gps.pos.longitude, lat, lng);
-      const label = km < 1 ? '< 1 km' : `${Math.round(km)} km`;
-      rows.push(`<div class="s-info-row"><span class="s-info-lbl">📏 Distance</span><span>${label} away</span></div>`);
+      rows.push(`<div class="s-info-row"><span class="s-info-lbl">📏 Distance</span><span>${km < 1 ? '< 1 km' : Math.round(km) + ' km'} away</span></div>`);
     }
-    if (p.price)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">💴 Cost</span><span>From ¥${p.price.toLocaleString()}</span></div>`);
-    if (p.hours)  rows.push(`<div class="s-info-row"><span class="s-info-lbl">🕐 Hours</span><span>${esc(p.hours)}</span></div>`);
-    if (p.amenities && p.amenities.length > 0)
-                  rows.push(`<div class="s-info-row"><span class="s-info-lbl">✅ Amenities</span><span>${esc(p.amenities.join(' · '))}</span></div>`);
+    if (p.price)     rows.push(`<div class="s-info-row"><span class="s-info-lbl">💴 Cost</span><span>From ¥${Number(p.price).toLocaleString()}</span></div>`);
+    if (p.hours)     rows.push(`<div class="s-info-row"><span class="s-info-lbl">🕐 Hours</span><span>${esc(p.hours)}</span></div>`);
+    const amenities = Array.isArray(p.amenities) ? p.amenities.join(' · ') : (p.amenities || '');
+    if (amenities)   rows.push(`<div class="s-info-row"><span class="s-info-lbl">✅ Amenities</span><span>${esc(amenities)}</span></div>`);
     rows.push(`<div class="s-info-row"><span class="s-info-lbl">📍 Region</span><span>${esc(p.region)} <span style="color:#bbb">${esc(p.region_ja)}</span></span></div>`);
 
     const googleUrl = `https://www.google.com/maps?q=${lat},${lng}&t=h&z=15`;
@@ -692,7 +702,6 @@
         <button class="btn btn-nav"  onclick="window.location.href='${navUrl}'">⬆ Nav</button>
       </div>
     `;
-
     sheet.classList.add('open');
     overlay.classList.add('on');
   }
@@ -704,14 +713,13 @@
 
   overlay.addEventListener('click', closeSheet);
   document.getElementById('sheet-handle-area').addEventListener('click', closeSheet);
-
   let touchStartY = 0;
   sheet.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive: true });
   sheet.addEventListener('touchend', e => {
     if (e.changedTouches[0].clientY - touchStartY > 60) closeSheet();
   }, { passive: true });
 
-  // ── Search ──────────────────────────────────────────────────────────────
+  // ── Search ────────────────────────────────────────────────────────────────
   const searchInput   = document.getElementById('search-input');
   const searchResults = document.getElementById('search-results');
   const topbar        = document.getElementById('topbar');
@@ -724,7 +732,6 @@
     closeFilterPanel();
     searchInput.focus();
   }
-
   function closeSearch() {
     topbar.classList.remove('search-active');
     searchInput.value = '';
@@ -744,24 +751,22 @@
   function runSearch() {
     const q = searchInput.value.trim().toLowerCase();
     if (!q) { searchResults.classList.remove('on'); return; }
-
     const hits = [];
-    for (const m of getVisible()) {
-      const p = m.p;
+    for (const f of getVisible()) {
+      const p = f.properties;
       if ((p.title_en || '').toLowerCase().includes(q) ||
           (p.title_ja || '').includes(q) ||
           (p.region   || '').toLowerCase().includes(q) ||
           (p.region_ja|| '').includes(q)) {
-        hits.push(m);
+        hits.push(f);
         if (hits.length === 20) break;
       }
     }
-
     if (hits.length === 0) {
       searchResults.innerHTML = `<div class="sr-empty">No results for "<b>${esc(q)}</b>"</div>`;
     } else {
-      searchResults.innerHTML = hits.map(m => {
-        const p = m.p;
+      searchResults.innerHTML = hits.map(f => {
+        const p = f.properties;
         const rank = p.rank === 'S' ? `<span class="sr-rank sr-rank-s">S</span>` :
                      p.rank === 'A' ? `<span class="sr-rank sr-rank-a">A</span>` : '';
         return `<div class="sr" data-id="${p.id}">
@@ -775,23 +780,25 @@
       }).join('');
       searchResults.querySelectorAll('.sr').forEach(row => {
         row.addEventListener('click', () => {
-          const m = markerById.get(row.dataset.id);
-          if (!m) return;
+          const f = featureById.get(row.dataset.id);
+          if (!f) return;
           closeSearch();
-          map.setView(m.getLatLng(), 14);
-          openSheet(m.f);
+          map.easeTo({ center: f.geometry.coordinates, zoom: 14 });
+          openSheet(f);
         });
       });
     }
     searchResults.classList.add('on');
   }
 
-  map.on('click', () => {
-    if (topbar.classList.contains('search-active')) closeSearch();
-    closeFilterPanel();
+  // ── Language toggle ───────────────────────────────────────────────────────
+  document.getElementById('btn-lang').addEventListener('click', () => {
+    lang = lang === 'en' ? 'ja' : 'en';
+    localStorage.setItem('campersan_lang', lang);
+    applyLangBtn();
   });
 
-  // ── Toast ────────────────────────────────────────────────────────────────
+  // ── Toast ─────────────────────────────────────────────────────────────────
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -800,7 +807,7 @@
     t._timer = setTimeout(() => t.classList.remove('on'), 2800);
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────────────
   function esc(s) {
     return String(s ?? '')
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
