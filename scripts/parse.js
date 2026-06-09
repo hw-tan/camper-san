@@ -9,7 +9,8 @@ const vm = require('vm');
 
 const RAW_DIR          = path.join(__dirname, '../raw-data');
 const OUT_FILE         = path.join(__dirname, '../public/spots.json');
-const TRANSLATIONS_CSV = path.join(__dirname, '../translations.csv');
+const TRANSLATIONS_CSV      = path.join(__dirname, '../translations.csv');
+const DESC_TRANSLATIONS_CSV = path.join(__dirname, '../desc-translations.csv');
 
 const FILES = [
   { file: 'hokkaidou.js', region: 'Hokkaido',         region_ja: '北海道' },
@@ -222,6 +223,21 @@ function loadTranslations() {
   return xlat;
 }
 
+function loadDescTranslations() {
+  if (!fs.existsSync(DESC_TRANSLATIONS_CSV)) return new Map();
+  const map = new Map();
+  const lines = fs.readFileSync(DESC_TRANSLATIONS_CSV, 'utf8')
+    .replace(/^﻿/, '').split('\n').slice(1);
+  for (const line of lines) {
+    const fi = line.indexOf(',');
+    if (fi < 0) continue;
+    const id      = line.slice(0, fi).trim();
+    const desc_en = line.slice(fi + 1).replace(/^"|"$/g, '').trim();
+    if (id && desc_en) map.set(id, desc_en);
+  }
+  return map;
+}
+
 function parseFile(content) {
   const cleaned = content.replace(/<!--[\s\S]*?-->/g, '').trim();
   const ctx = {};
@@ -234,8 +250,11 @@ function parseFile(content) {
 }
 
 function main() {
-  const xlat = loadTranslations();
-  if (xlat.size > 0) console.log(`  ${xlat.size} translations loaded from CSV\n`);
+  const xlat     = loadTranslations();
+  const descXlat = loadDescTranslations();
+  if (xlat.size > 0)     console.log(`  ${xlat.size} title translations loaded`);
+  if (descXlat.size > 0) console.log(`  ${descXlat.size} description translations loaded`);
+  if (xlat.size > 0 || descXlat.size > 0) console.log();
 
   const features = [];
 
@@ -260,6 +279,8 @@ function main() {
       }
 
       const descInfo = extractDesc(spot.desc);
+      const spotId = String(features.length);
+      if (descXlat.has(spotId)) descInfo.desc_en = descXlat.get(spotId);
 
       features.push({
         type: 'Feature',
