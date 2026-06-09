@@ -223,18 +223,38 @@ function loadTranslations() {
   return xlat;
 }
 
+function parseCSVPairs(text) {
+  const map = new Map();
+  let i = 0, inQ = false, cell = '', colIdx = 0, key = '';
+  const flush = () => {
+    if (colIdx === 0) { key = cell; }
+    else if (colIdx === 1 && key) { map.set(key, cell); }
+    cell = ''; colIdx++;
+  };
+  while (i < text.length) {
+    const ch = text[i];
+    if (inQ) {
+      if (ch === '"' && text[i + 1] === '"') { cell += '"'; i++; }
+      else if (ch === '"') { inQ = false; }
+      else { cell += ch; }
+    } else {
+      if      (ch === '"')  { inQ = true; }
+      else if (ch === ',')  { flush(); }
+      else if (ch === '\n') { flush(); key = ''; colIdx = 0; }
+      else if (ch !== '\r') { cell += ch; }
+    }
+    i++;
+  }
+  if (cell !== '' || colIdx > 0) flush();
+  return map;
+}
+
 function loadDescTranslations() {
   if (!fs.existsSync(DESC_TRANSLATIONS_CSV)) return new Map();
-  const map = new Map();
-  const lines = fs.readFileSync(DESC_TRANSLATIONS_CSV, 'utf8')
-    .replace(/^﻿/, '').split('\n').slice(1);
-  for (const line of lines) {
-    const fi = line.indexOf(',');
-    if (fi < 0) continue;
-    const id      = line.slice(0, fi).trim();
-    const desc_en = line.slice(fi + 1).replace(/^"|"$/g, '').trim();
-    if (id && desc_en) map.set(id, desc_en);
-  }
+  const raw = fs.readFileSync(DESC_TRANSLATIONS_CSV, 'utf8').replace(/^﻿/, '');
+  // Strip header row then parse
+  const bodyStart = raw.indexOf('\n');
+  const map = parseCSVPairs(bodyStart >= 0 ? raw.slice(bodyStart + 1) : raw);
   return map;
 }
 
@@ -275,7 +295,8 @@ function main() {
       // Apply translation lookup — preserve rank/status prefix already in title_en
       if (xlat.has(titleInfo.title_ja)) {
         const prefix = (titleInfo.title_en.match(/^(\[[^\]]+\]\s*)+/) || [''])[0];
-        titleInfo.title_en = prefix + xlat.get(titleInfo.title_ja);
+        const base   = xlat.get(titleInfo.title_ja).replace(/^(\[[^\]]+\]\s*)+/, '');
+        titleInfo.title_en = prefix + base;
       }
 
       const descInfo = extractDesc(spot.desc);
