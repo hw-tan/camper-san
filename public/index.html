@@ -500,6 +500,24 @@
       },
     });
 
+    // User location dot
+    map.addSource('user-location', {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] },
+    });
+    map.addLayer({
+      id: 'user-location-halo',
+      type: 'circle',
+      source: 'user-location',
+      paint: { 'circle-radius': 20, 'circle-color': 'rgba(66,133,244,0.15)', 'circle-stroke-width': 0 },
+    });
+    map.addLayer({
+      id: 'user-location-dot',
+      type: 'circle',
+      source: 'user-location',
+      paint: { 'circle-radius': 8, 'circle-color': '#4285F4', 'circle-stroke-width': 3, 'circle-stroke-color': 'white' },
+    });
+
     // ── Interactions ──────────────────────────────────────────────────────
     map.on('click', 'spots-points', e => {
       const f = featureById.get(String(e.features[0].properties.id));
@@ -525,6 +543,14 @@
       if (hit.length) return;
       if (topbar.classList.contains('search-active')) closeSearch();
       closeFilterPanel();
+    });
+  }
+
+  function showUserDot(coords) {
+    if (!map.getSource('user-location')) return;
+    map.getSource('user-location').setData({
+      type: 'FeatureCollection',
+      features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [coords.longitude, coords.latitude] }, properties: {} }],
     });
   }
 
@@ -601,7 +627,7 @@
 
   // ── Locate ────────────────────────────────────────────────────────────────
   document.getElementById('btn-locate').addEventListener('click', () => {
-    requestGPS(c => map.easeTo({ center: [c.longitude, c.latitude], zoom: 13 }));
+    requestGPS(c => { showUserDot(c); map.easeTo({ center: [c.longitude, c.latitude], zoom: 13 }); });
   });
 
   // ── Near Me ───────────────────────────────────────────────────────────────
@@ -637,8 +663,8 @@
   }
 
   document.getElementById('btn-near-me').addEventListener('click', () => {
-    if (gps.pos) { showRadiusPicker(); return; }
-    requestGPS(() => showRadiusPicker(), () => showToast('Location access needed for Near Me'));
+    if (gps.pos) { showUserDot(gps.pos); showRadiusPicker(); return; }
+    requestGPS(c => { showUserDot(c); showRadiusPicker(); }, () => showToast('Location access needed for Near Me'));
   });
   radiusBadge.addEventListener('click', () => showRadiusPicker());
   radiusPicker.querySelectorAll('.radius-opt').forEach(btn => {
