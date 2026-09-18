@@ -260,6 +260,21 @@
     }
     .radius-cancel:active { background: #ebebeb; }
 
+    /* ── Hide-pins floating button ── */
+    #btn-hide-pins {
+      position: fixed; left: 14px; bottom: 34px; z-index: 900;
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    #btn-hide-pins.active { background: rgba(45,122,79,0.75); }
+    #btn-hide-pins:active { opacity: 0.8; }
+
     /* ── Toast ── */
     #toast {
       display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -317,12 +332,10 @@
     <button class="fp-chip" data-tag="top">⭐ A/S Rank</button>
     <button class="fp-chip" data-tag="saved">❤️ Saved</button>
   </div>
-  <div class="fp-divider"></div>
-  <div class="fp-chips">
-    <button class="fp-chip" id="fp-hide-pins">🙈 Hide All Pins</button>
-  </div>
   <button class="fp-clear" id="fp-clear">✕  Clear all filters</button>
 </div>
+
+<button id="btn-hide-pins" title="Hide all pins">🙈</button>
 
 <div id="update-banner">
   🔄 Update ready
@@ -585,7 +598,7 @@
 
   // ── Hide all pins (display-only toggle, independent of filters/search) ────
   let pinsHidden = false;
-  document.getElementById('fp-hide-pins').addEventListener('click', e => {
+  document.getElementById('btn-hide-pins').addEventListener('click', e => {
     pinsHidden = !pinsHidden;
     if (pinsHidden) {
       map.removeLayer(cluster);
@@ -595,7 +608,8 @@
       map.addLayer(favLayer);
     }
     e.currentTarget.classList.toggle('active', pinsHidden);
-    e.currentTarget.textContent = pinsHidden ? '👁️ Show All Pins' : '🙈 Hide All Pins';
+    e.currentTarget.textContent = pinsHidden ? '👁️' : '🙈';
+    e.currentTarget.title = pinsHidden ? 'Show all pins' : 'Hide all pins';
   });
 
   document.addEventListener('click', e => {
