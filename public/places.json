@@ -1,0 +1,722 @@
+[
+  {
+    "id": "mt-bandai",
+    "name_en": "Mount Bandai",
+    "name_ja": "磐梯山",
+    "lat": 37.6009797,
+    "lng": 140.0722448,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "mt-fuji",
+    "name_en": "Mount Fuji",
+    "name_ja": "富士山",
+    "lat": 35.3628384,
+    "lng": 138.7307677,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "mt-aso",
+    "name_en": "Mount Aso",
+    "name_ja": "阿蘇山",
+    "lat": 32.8827019,
+    "lng": 131.0947404,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "mt-yotei",
+    "name_en": "Mount Yotei",
+    "name_ja": "羊蹄山",
+    "lat": 42.8269572,
+    "lng": 140.8067401,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "mt-norikura",
+    "name_en": "Mount Norikura",
+    "name_ja": "乗鞍岳",
+    "lat": 36.1067649,
+    "lng": 137.5496858,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "mt-zao",
+    "name_en": "Mount Zao",
+    "name_ja": "蔵王山",
+    "lat": 38.1364464,
+    "lng": 140.4494698,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "ogawayama",
+    "name_en": "Ogawayama",
+    "name_ja": "小川山",
+    "lat": 35.9094463,
+    "lng": 138.6122912,
+    "zoom": 12,
+    "type": "mountain"
+  },
+  {
+    "id": "shiga-kogen",
+    "name_en": "Shiga Kogen",
+    "name_ja": "志賀高原",
+    "lat": 36.7330511,
+    "lng": 138.4316714,
+    "zoom": 11,
+    "type": "kogen"
+  },
+  {
+    "id": "shiretoko-np",
+    "name_en": "Shiretoko National Park",
+    "name_ja": "知床国立公園",
+    "lat": 44.1757705,
+    "lng": 145.2214961,
+    "zoom": 9,
+    "type": "national_park"
+  },
+  {
+    "id": "daisetsuzan-np",
+    "name_en": "Daisetsuzan National Park",
+    "name_ja": "大雪山国立公園",
+    "lat": 43.5283385,
+    "lng": 142.9940409,
+    "zoom": 9,
+    "type": "national_park"
+  },
+  {
+    "id": "niseko",
+    "name_en": "Niseko",
+    "name_ja": "ニセコ",
+    "lat": 42.8089309,
+    "lng": 140.6847598,
+    "zoom": 12,
+    "type": "ski_area"
+  },
+  {
+    "id": "hakuba",
+    "name_en": "Hakuba",
+    "name_ja": "白馬",
+    "lat": 36.6957704,
+    "lng": 137.8637221,
+    "zoom": 12,
+    "type": "ski_area"
+  },
+  {
+    "id": "izu-peninsula",
+    "name_en": "Izu Peninsula",
+    "name_ja": "伊豆半島",
+    "lat": 34.917385,
+    "lng": 138.9628947,
+    "zoom": 10,
+    "type": "district"
+  },
+  {
+    "id": "shimanami-kaido",
+    "name_en": "Shimanami Kaido",
+    "name_ja": "しまなみ海道",
+    "lat": 34.4325658,
+    "lng": 133.2174032,
+    "zoom": 10,
+    "type": "district"
+  },
+  {
+    "id": "okinawa-main-island",
+    "name_en": "Okinawa Main Island",
+    "name_ja": "沖縄本島",
+    "lat": 26.4749889,
+    "lng": 127.9115291,
+    "zoom": 10,
+    "type": "district"
+  },
+  {
+    "id": "sapporo",
+    "name_en": "Sapporo",
+    "name_ja": "札幌市",
+    "lat": 43.061936,
+    "lng": 141.3542924,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "aomori-city",
+    "name_en": "Aomori",
+    "name_ja": "青森市",
+    "lat": 40.8222833,
+    "lng": 140.7472027,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "morioka",
+    "name_en": "Morioka",
+    "name_ja": "盛岡市",
+    "lat": 39.7021331,
+    "lng": 141.1545397,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "sendai",
+    "name_en": "Sendai",
+    "name_ja": "仙台市",
+    "lat": 38.2677554,
+    "lng": 140.8691498,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "akita-city",
+    "name_en": "Akita",
+    "name_ja": "秋田市",
+    "lat": 39.7197629,
+    "lng": 140.1034669,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "yamagata-city",
+    "name_en": "Yamagata",
+    "name_ja": "山形市",
+    "lat": 38.2553393,
+    "lng": 140.3400205,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "fukushima-city",
+    "name_en": "Fukushima",
+    "name_ja": "福島市",
+    "lat": 37.760777,
+    "lng": 140.4745807,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "mito",
+    "name_en": "Mito",
+    "name_ja": "水戸市",
+    "lat": 36.3659174,
+    "lng": 140.4731743,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "utsunomiya",
+    "name_en": "Utsunomiya",
+    "name_ja": "宇都宮市",
+    "lat": 36.5549677,
+    "lng": 139.8828776,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "maebashi",
+    "name_en": "Maebashi",
+    "name_ja": "前橋市",
+    "lat": 36.3893418,
+    "lng": 139.0632826,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "saitama-city",
+    "name_en": "Saitama",
+    "name_ja": "さいたま市",
+    "lat": 35.8616141,
+    "lng": 139.6455666,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "chiba-city",
+    "name_en": "Chiba",
+    "name_ja": "千葉市",
+    "lat": 35.6070629,
+    "lng": 140.1062653,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "tokyo",
+    "name_en": "Tokyo",
+    "name_ja": "東京",
+    "lat": 35.6768601,
+    "lng": 139.7638947,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "yokohama",
+    "name_en": "Yokohama",
+    "name_ja": "横浜市",
+    "lat": 35.4503381,
+    "lng": 139.6343802,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "niigata-city",
+    "name_en": "Niigata",
+    "name_ja": "新潟市",
+    "lat": 37.9163757,
+    "lng": 139.0365062,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "toyama-city",
+    "name_en": "Toyama",
+    "name_ja": "富山市",
+    "lat": 36.6957569,
+    "lng": 137.2136215,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kanazawa",
+    "name_en": "Kanazawa",
+    "name_ja": "金沢市",
+    "lat": 36.561627,
+    "lng": 136.6568822,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "fukui-city",
+    "name_en": "Fukui",
+    "name_ja": "福井市",
+    "lat": 36.061751,
+    "lng": 136.2260542,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kofu",
+    "name_en": "Kofu",
+    "name_ja": "甲府市",
+    "lat": 35.6652481,
+    "lng": 138.5710441,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "nagano-city",
+    "name_en": "Nagano",
+    "name_ja": "長野市",
+    "lat": 36.6485851,
+    "lng": 138.1947664,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "gifu-city",
+    "name_en": "Gifu",
+    "name_ja": "岐阜市",
+    "lat": 35.4230949,
+    "lng": 136.7627526,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "shizuoka-city",
+    "name_en": "Shizuoka",
+    "name_ja": "静岡市",
+    "lat": 34.9751974,
+    "lng": 138.3831697,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "nagoya",
+    "name_en": "Nagoya",
+    "name_ja": "名古屋市",
+    "lat": 35.1851045,
+    "lng": 136.8998438,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "tsu",
+    "name_en": "Tsu",
+    "name_ja": "津市",
+    "lat": 34.7341973,
+    "lng": 136.5153283,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "otsu",
+    "name_en": "Otsu",
+    "name_ja": "大津市",
+    "lat": 35.0177852,
+    "lng": 135.8548122,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kyoto-city",
+    "name_en": "Kyoto",
+    "name_ja": "京都市",
+    "lat": 35.0115754,
+    "lng": 135.7681441,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "osaka-city",
+    "name_en": "Osaka",
+    "name_ja": "大阪市",
+    "lat": 34.6937569,
+    "lng": 135.5014539,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kobe",
+    "name_en": "Kobe",
+    "name_ja": "神戸市",
+    "lat": 34.6932379,
+    "lng": 135.1943764,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "nara-city",
+    "name_en": "Nara",
+    "name_ja": "奈良市",
+    "lat": 34.6845445,
+    "lng": 135.8048359,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "wakayama-city",
+    "name_en": "Wakayama",
+    "name_ja": "和歌山市",
+    "lat": 34.2342931,
+    "lng": 135.1783549,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "tottori-city",
+    "name_en": "Tottori",
+    "name_ja": "鳥取市",
+    "lat": 35.4943948,
+    "lng": 134.2219282,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "matsue",
+    "name_en": "Matsue",
+    "name_ja": "松江市",
+    "lat": 35.468115,
+    "lng": 133.048768,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "okayama-city",
+    "name_en": "Okayama",
+    "name_ja": "岡山市",
+    "lat": 34.6553944,
+    "lng": 133.9194595,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "hiroshima-city",
+    "name_en": "Hiroshima",
+    "name_ja": "広島市",
+    "lat": 34.3917241,
+    "lng": 132.4517589,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "yamaguchi-city",
+    "name_en": "Yamaguchi",
+    "name_ja": "山口市",
+    "lat": 34.1781317,
+    "lng": 131.4737077,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "tokushima-city",
+    "name_en": "Tokushima",
+    "name_ja": "徳島市",
+    "lat": 34.0698307,
+    "lng": 134.5550353,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "takamatsu",
+    "name_en": "Takamatsu",
+    "name_ja": "高松市",
+    "lat": 34.3425592,
+    "lng": 134.0465338,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "matsuyama",
+    "name_en": "Matsuyama",
+    "name_ja": "松山市",
+    "lat": 33.8395188,
+    "lng": 132.7653521,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kochi-city",
+    "name_en": "Kochi",
+    "name_ja": "高知市",
+    "lat": 33.5588482,
+    "lng": 133.5310918,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "fukuoka-city",
+    "name_en": "Fukuoka",
+    "name_ja": "福岡市",
+    "lat": 33.5898988,
+    "lng": 130.4017509,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "saga-city",
+    "name_en": "Saga",
+    "name_ja": "佐賀市",
+    "lat": 33.2639134,
+    "lng": 130.3008378,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "nagasaki-city",
+    "name_en": "Nagasaki",
+    "name_ja": "長崎市",
+    "lat": 32.7501611,
+    "lng": 129.8781002,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kumamoto-city",
+    "name_en": "Kumamoto",
+    "name_ja": "熊本市",
+    "lat": 32.8033909,
+    "lng": 130.7082737,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "oita-city",
+    "name_en": "Oita",
+    "name_ja": "大分市",
+    "lat": 33.2393864,
+    "lng": 131.6096524,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "miyazaki-city",
+    "name_en": "Miyazaki",
+    "name_ja": "宮崎市",
+    "lat": 31.9076334,
+    "lng": 131.4204022,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "kagoshima-city",
+    "name_en": "Kagoshima",
+    "name_ja": "鹿児島市",
+    "lat": 31.596793,
+    "lng": 130.5571949,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "naha",
+    "name_en": "Naha",
+    "name_ja": "那覇市",
+    "lat": 26.2122345,
+    "lng": 127.6791452,
+    "zoom": 11,
+    "type": "city"
+  },
+  {
+    "id": "hakone",
+    "name_en": "Hakone",
+    "name_ja": "箱根町",
+    "lat": 35.2323662,
+    "lng": 139.1068849,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "karuizawa",
+    "name_en": "Karuizawa",
+    "name_ja": "軽井沢町",
+    "lat": 36.3482938,
+    "lng": 138.5969968,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "nikko-city",
+    "name_en": "Nikko",
+    "name_ja": "日光市",
+    "lat": 36.7197576,
+    "lng": 139.698139,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "kamakura",
+    "name_en": "Kamakura",
+    "name_ja": "鎌倉市",
+    "lat": 35.3192808,
+    "lng": 139.5469627,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "beppu",
+    "name_en": "Beppu",
+    "name_ja": "別府市",
+    "lat": 33.2845752,
+    "lng": 131.4913063,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "yufuin",
+    "name_en": "Yufuin",
+    "name_ja": "由布院",
+    "lat": 33.2624524,
+    "lng": 131.3550013,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "takayama",
+    "name_en": "Takayama",
+    "name_ja": "高山市",
+    "lat": 36.1396246,
+    "lng": 137.2510322,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "kurashiki",
+    "name_en": "Kurashiki",
+    "name_ja": "倉敷市",
+    "lat": 34.5850791,
+    "lng": 133.7719957,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "otaru",
+    "name_en": "Otaru",
+    "name_ja": "小樽市",
+    "lat": 43.1906806,
+    "lng": 140.9946021,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "furano",
+    "name_en": "Furano",
+    "name_ja": "富良野市",
+    "lat": 43.3423076,
+    "lng": 142.3834956,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "matsumoto",
+    "name_en": "Matsumoto",
+    "name_ja": "松本市",
+    "lat": 36.2382047,
+    "lng": 137.9687141,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "atami",
+    "name_en": "Atami",
+    "name_ja": "熱海市",
+    "lat": 35.096471,
+    "lng": 139.0717866,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "nasu",
+    "name_en": "Nasu",
+    "name_ja": "那須町",
+    "lat": 37.0198382,
+    "lng": 140.1208649,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "fujikawaguchiko",
+    "name_en": "Fujikawaguchiko",
+    "name_ja": "富士河口湖町",
+    "lat": 35.5010653,
+    "lng": 138.7653041,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "kusatsu-onsen",
+    "name_en": "Kusatsu Onsen",
+    "name_ja": "草津町",
+    "lat": 36.6206672,
+    "lng": 138.5960851,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "toba",
+    "name_en": "Toba",
+    "name_ja": "鳥羽市",
+    "lat": 34.4812985,
+    "lng": 136.8434721,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "ine",
+    "name_en": "Ine",
+    "name_ja": "伊根町",
+    "lat": 35.6751344,
+    "lng": 135.2727378,
+    "zoom": 13,
+    "type": "town"
+  },
+  {
+    "id": "shirakawago",
+    "name_en": "Shirakawa-go",
+    "name_ja": "白川郷",
+    "lat": 36.2573454,
+    "lng": 136.9068317,
+    "zoom": 13,
+    "type": "town"
+  }
+]

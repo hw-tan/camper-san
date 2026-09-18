@@ -1,11 +1,12 @@
-const CACHE      = 'campersan-v3';
-const TILE_CACHE = 'campersan-tiles-v3';
+const CACHE      = 'campersan-v4';
+const TILE_CACHE = 'campersan-tiles-v4';
 const TILE_LIMIT = 500;
 
 const PRECACHE = [
   '/',
   '/index.html',
   '/spots.json',
+  '/places.json',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
   'https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css',
@@ -37,8 +38,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // OSM map tiles — cache on access, LRU-trim to TILE_LIMIT
-  if (url.hostname.endsWith('.tile.openstreetmap.org')) {
+  // Map tiles (Wikimedia's OSM-based English-label tiles) — cache on access, LRU-trim to TILE_LIMIT
+  if (url.hostname === 'maps.wikimedia.org') {
     e.respondWith(handleTile(e.request));
     return;
   }
@@ -51,6 +52,13 @@ self.addEventListener('fetch', e => {
 
   // spots.json — network-first: always fetch fresh when online, fall back to cache offline
   if (url.pathname === '/spots.json') {
+    e.respondWith(networkFirst(e.request));
+    return;
+  }
+
+  // places.json — same rationale as spots.json: small, rarely changes, but
+  // should refresh when online and fall back to cache offline
+  if (url.pathname === '/places.json') {
     e.respondWith(networkFirst(e.request));
     return;
   }
