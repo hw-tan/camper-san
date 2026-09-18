@@ -443,8 +443,8 @@
     preferCanvas: true,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © <a href="https://www.esri.com">Esri</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
     maxZoom: 19,
   }).addTo(map);
 
