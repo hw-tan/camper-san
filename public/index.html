@@ -260,6 +260,21 @@
     }
     .radius-cancel:active { background: #ebebeb; }
 
+    /* ── Hide-pins floating button ── */
+    #btn-hide-pins {
+      position: fixed; left: 14px; bottom: 34px; z-index: 900;
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    #btn-hide-pins.active { background: rgba(45,122,79,0.75); }
+    #btn-hide-pins:active { opacity: 0.8; }
+
     /* ── Toast ── */
     #toast {
       display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -319,6 +334,8 @@
   </div>
   <button class="fp-clear" id="fp-clear">✕  Clear all filters</button>
 </div>
+
+<button id="btn-hide-pins" title="Hide all pins">🙈</button>
 
 <div id="update-banner">
   🔄 Update ready
@@ -551,7 +568,7 @@
 
     if (!map.hasLayer(cluster)) map.addLayer(cluster);
 
-    document.querySelectorAll('.fp-chip').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
+    document.querySelectorAll('.fp-chip[data-tag]').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
     document.getElementById('filter-badge').classList.toggle('on', activeTags.size > 0);
     updateCount();
   }
@@ -570,13 +587,29 @@
     document.getElementById('filter-panel').classList.toggle('open');
   });
 
-  document.querySelectorAll('.fp-chip').forEach(chip => {
+  document.querySelectorAll('.fp-chip[data-tag]').forEach(chip => {
     chip.addEventListener('click', () => toggleTag(chip.dataset.tag));
   });
 
   document.getElementById('fp-clear').addEventListener('click', () => {
     activeTags.clear();
     applyFilters();
+  });
+
+  // ── Hide all pins (display-only toggle, independent of filters/search) ────
+  let pinsHidden = false;
+  document.getElementById('btn-hide-pins').addEventListener('click', e => {
+    pinsHidden = !pinsHidden;
+    if (pinsHidden) {
+      map.removeLayer(cluster);
+      map.removeLayer(favLayer);
+    } else {
+      map.addLayer(cluster);
+      map.addLayer(favLayer);
+    }
+    e.currentTarget.classList.toggle('active', pinsHidden);
+    e.currentTarget.textContent = pinsHidden ? '👁️' : '🙈';
+    e.currentTarget.title = pinsHidden ? 'Show all pins' : 'Hide all pins';
   });
 
   document.addEventListener('click', e => {
