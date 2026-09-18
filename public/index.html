@@ -212,6 +212,7 @@
     .sr-body { flex: 1; min-width: 0; }
     .sr-name { font-size: 14px; font-weight: 700; color: #111; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sr-meta { font-size: 11px; color: #aaa; margin-top: 1px; }
+    .sr-place .sr-meta { color: #2d7a4f; font-weight: 600; }
     .sr-rank { font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 999px; flex-shrink: 0; }
     .sr-rank-s { background: #FFD700; color: #5D4037; }
     .sr-rank-a { background: #C8E6C9; color: #1B5E20; }
@@ -357,6 +358,7 @@
   let lang = localStorage.getItem('campersan_lang') || 'en';
   function displayTitle(p) { return lang === 'ja' ? (p.title_ja || p.title_en || '') : (p.title_en || p.title_ja || ''); }
   function displayTitleAlt(p) { return lang === 'ja' ? (p.title_en || '') : (p.title_ja || ''); }
+  function displayPlaceName(pl) { return lang === 'ja' ? (pl.name_ja || pl.name_en || '') : (pl.name_en || pl.name_ja || ''); }
   function applyLangBtn() {
     const btn = document.getElementById('btn-lang');
     btn.textContent = lang === 'ja' ? 'JA' : 'EN';
@@ -441,8 +443,8 @@
     preferCanvas: true,
   });
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
+  L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png?lang=en', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors, tiles by <a href="https://wikimediafoundation.org/">Wikimedia</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
     maxZoom: 19,
   }).addTo(map);
 
@@ -485,6 +487,9 @@
   }
 
   // ── Load data ────────────────────────────────────────────────────────────
+  let places = [];
+  fetch('/places.json').then(r => r.json()).then(data => { places = data; }).catch(() => {});
+
   fetch('/spots.json')
     .then(r => r.json())
     .then(geojson => {
@@ -746,25 +751,43 @@
     if (!q) { searchResults.classList.remove('on'); return; }
 
     const hits = [];
-    for (const m of getVisible()) {
-      const p = m.p;
-      if ((p.title_en || '').toLowerCase().includes(q) ||
-          (p.title_ja || '').includes(q) ||
-          (p.region   || '').toLowerCase().includes(q) ||
-          (p.region_ja|| '').includes(q)) {
-        hits.push(m);
+    for (const pl of places) {
+      if ((pl.name_en || '').toLowerCase().includes(q) || (pl.name_ja || '').includes(q)) {
+        hits.push({ kind: 'place', pl });
         if (hits.length === 20) break;
+      }
+    }
+    if (hits.length < 20) {
+      for (const m of getVisible()) {
+        const p = m.p;
+        if ((p.title_en || '').toLowerCase().includes(q) ||
+            (p.title_ja || '').includes(q) ||
+            (p.region   || '').toLowerCase().includes(q) ||
+            (p.region_ja|| '').includes(q)) {
+          hits.push({ kind: 'spot', m });
+          if (hits.length === 20) break;
+        }
       }
     }
 
     if (hits.length === 0) {
       searchResults.innerHTML = `<div class="sr-empty">No results for "<b>${esc(q)}</b>"</div>`;
     } else {
-      searchResults.innerHTML = hits.map(m => {
-        const p = m.p;
+      searchResults.innerHTML = hits.map(hit => {
+        if (hit.kind === 'place') {
+          const pl = hit.pl;
+          return `<div class="sr sr-place" data-kind="place" data-id="${esc(pl.id)}">
+            <span class="sr-dot">🗺️</span>
+            <div class="sr-body">
+              <div class="sr-name">${esc(displayPlaceName(pl))}</div>
+              <div class="sr-meta">${lang === 'ja' ? 'エリア' : 'Area'}</div>
+            </div>
+          </div>`;
+        }
+        const p = hit.m.p;
         const rank = p.rank === 'S' ? `<span class="sr-rank sr-rank-s">S</span>` :
                      p.rank === 'A' ? `<span class="sr-rank sr-rank-a">A</span>` : '';
-        return `<div class="sr" data-id="${p.id}">
+        return `<div class="sr" data-kind="spot" data-id="${p.id}">
           <span class="sr-dot">${p.emoji || '📍'}</span>
           <div class="sr-body">
             <div class="sr-name">${esc(displayTitle(p))}</div>
@@ -775,6 +798,13 @@
       }).join('');
       searchResults.querySelectorAll('.sr').forEach(row => {
         row.addEventListener('click', () => {
+          if (row.dataset.kind === 'place') {
+            const pl = places.find(x => x.id === row.dataset.id);
+            if (!pl) return;
+            closeSearch();
+            map.setView([pl.lat, pl.lng], pl.zoom);
+            return;
+          }
           const m = markerById.get(row.dataset.id);
           if (!m) return;
           closeSearch();
