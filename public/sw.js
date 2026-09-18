@@ -1,5 +1,5 @@
-const CACHE      = 'campersan-v4';
-const TILE_CACHE = 'campersan-tiles-v4';
+const CACHE      = 'campersan-v5';
+const TILE_CACHE = 'campersan-tiles-v5';
 const TILE_LIMIT = 500;
 
 const PRECACHE = [
@@ -38,8 +38,8 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Map tiles (Wikimedia's OSM-based English-label tiles) — cache on access, LRU-trim to TILE_LIMIT
-  if (url.hostname === 'maps.wikimedia.org') {
+  // OSM map tiles — cache on access, LRU-trim to TILE_LIMIT
+  if (url.hostname.endsWith('.tile.openstreetmap.org')) {
     e.respondWith(handleTile(e.request));
     return;
   }
