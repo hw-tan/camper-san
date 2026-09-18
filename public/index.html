@@ -317,6 +317,10 @@
     <button class="fp-chip" data-tag="top">⭐ A/S Rank</button>
     <button class="fp-chip" data-tag="saved">❤️ Saved</button>
   </div>
+  <div class="fp-divider"></div>
+  <div class="fp-chips">
+    <button class="fp-chip" id="fp-hide-pins">🙈 Hide All Pins</button>
+  </div>
   <button class="fp-clear" id="fp-clear">✕  Clear all filters</button>
 </div>
 
@@ -551,7 +555,7 @@
 
     if (!map.hasLayer(cluster)) map.addLayer(cluster);
 
-    document.querySelectorAll('.fp-chip').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
+    document.querySelectorAll('.fp-chip[data-tag]').forEach(c => c.classList.toggle('active', activeTags.has(c.dataset.tag)));
     document.getElementById('filter-badge').classList.toggle('on', activeTags.size > 0);
     updateCount();
   }
@@ -570,13 +574,28 @@
     document.getElementById('filter-panel').classList.toggle('open');
   });
 
-  document.querySelectorAll('.fp-chip').forEach(chip => {
+  document.querySelectorAll('.fp-chip[data-tag]').forEach(chip => {
     chip.addEventListener('click', () => toggleTag(chip.dataset.tag));
   });
 
   document.getElementById('fp-clear').addEventListener('click', () => {
     activeTags.clear();
     applyFilters();
+  });
+
+  // ── Hide all pins (display-only toggle, independent of filters/search) ────
+  let pinsHidden = false;
+  document.getElementById('fp-hide-pins').addEventListener('click', e => {
+    pinsHidden = !pinsHidden;
+    if (pinsHidden) {
+      map.removeLayer(cluster);
+      map.removeLayer(favLayer);
+    } else {
+      map.addLayer(cluster);
+      map.addLayer(favLayer);
+    }
+    e.currentTarget.classList.toggle('active', pinsHidden);
+    e.currentTarget.textContent = pinsHidden ? '👁️ Show All Pins' : '🙈 Hide All Pins';
   });
 
   document.addEventListener('click', e => {
