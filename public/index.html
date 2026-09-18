@@ -443,8 +443,8 @@
     preferCanvas: true,
   });
 
-  L.tileLayer('https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png?lang=en', {
-    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> contributors, tiles by <a href="https://wikimediafoundation.org/">Wikimedia</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
     maxZoom: 19,
   }).addTo(map);
 
