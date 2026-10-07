@@ -1,4 +1,4 @@
-const CACHE      = 'campersan-v6';
+const CACHE      = 'campersan-v7';
 const TILE_CACHE = 'campersan-tiles-v6';
 const TILE_LIMIT = 500;
 
@@ -38,7 +38,7 @@ self.addEventListener('message', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Map tiles (Esri World Street Map, English labels) — cache on access, LRU-trim to TILE_LIMIT
+  // Map tiles (Esri street map, satellite imagery and labels) — cache on access, LRU-trim to TILE_LIMIT
   if (url.hostname === 'server.arcgisonline.com') {
     e.respondWith(handleTile(e.request));
     return;

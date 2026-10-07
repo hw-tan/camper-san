@@ -275,6 +275,21 @@
     #btn-hide-pins.active { background: rgba(45,122,79,0.75); }
     #btn-hide-pins:active { opacity: 0.8; }
 
+    /* ── Basemap (street ⇄ satellite) floating button, stacked above hide-pins ── */
+    #btn-basemap {
+      position: fixed; left: 14px; bottom: 86px; z-index: 900;
+      width: 42px; height: 42px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.15s;
+    }
+    #btn-basemap.active { background: rgba(45,122,79,0.75); }
+    #btn-basemap:active { opacity: 0.8; }
+
     /* ── Toast ── */
     #toast {
       display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
@@ -335,6 +350,7 @@
   <button class="fp-clear" id="fp-clear">✕  Clear all filters</button>
 </div>
 
+<button id="btn-basemap" title="Satellite view">🛰️</button>
 <button id="btn-hide-pins" title="Hide all pins">🙈</button>
 
 <div id="update-banner">
@@ -460,10 +476,24 @@
     preferCanvas: true,
   });
 
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Tiles © <a href="https://www.esri.com">Esri</a> · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>',
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  const DATA_ATTR = ' · Data: <a href="https://syachuhaku.fxtec.info">車中泊まとめWiki</a>';
+  const streetLayer = L.tileLayer(ESRI + 'World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles © <a href="https://www.esri.com">Esri</a>' + DATA_ATTR,
     maxZoom: 19,
-  }).addTo(map);
+  });
+  // Satellite = Esri World Imagery + transparent place-name/boundary labels on top
+  const satelliteLayer = L.layerGroup([
+    L.tileLayer(ESRI + 'World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Imagery © <a href="https://www.esri.com">Esri</a>, Maxar, Earthstar Geographics' + DATA_ATTR,
+      maxZoom: 19,
+    }),
+    L.tileLayer(ESRI + 'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+    }),
+  ]);
+  let satellite = localStorage.getItem('campersan_basemap') === 'satellite';
+  (satellite ? satelliteLayer : streetLayer).addTo(map);
 
   L.control.zoom({ position: 'topright' }).addTo(map);
 
@@ -610,6 +640,22 @@
     e.currentTarget.classList.toggle('active', pinsHidden);
     e.currentTarget.textContent = pinsHidden ? '👁️' : '🙈';
     e.currentTarget.title = pinsHidden ? 'Show all pins' : 'Hide all pins';
+  });
+
+  // ── Basemap toggle: street map ⇄ satellite imagery (persisted) ──────────
+  const basemapBtn = document.getElementById('btn-basemap');
+  function syncBasemapBtn() {
+    basemapBtn.classList.toggle('active', satellite);
+    basemapBtn.textContent = satellite ? '🗺️' : '🛰️';
+    basemapBtn.title = satellite ? 'Street map view' : 'Satellite view';
+  }
+  syncBasemapBtn();
+  basemapBtn.addEventListener('click', () => {
+    satellite = !satellite;
+    map.removeLayer(satellite ? streetLayer : satelliteLayer);
+    map.addLayer(satellite ? satelliteLayer : streetLayer);
+    localStorage.setItem('campersan_basemap', satellite ? 'satellite' : 'street');
+    syncBasemapBtn();
   });
 
   document.addEventListener('click', e => {
