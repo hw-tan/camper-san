@@ -1,4 +1,4 @@
-const CACHE      = 'campersan-v6';
+const CACHE      = 'campersan-v7';
 const TILE_CACHE = 'campersan-tiles-v6';
 const TILE_LIMIT = 500;
 
