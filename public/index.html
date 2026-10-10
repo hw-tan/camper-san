@@ -284,6 +284,54 @@
     }
     #toast.on { display: block; }
 
+    /* ── My-location dot ── */
+    .me-icon { position: relative; width: 22px; height: 22px; }
+    .me-dot {
+      position: absolute; inset: 3px; border-radius: 50%;
+      background: #1a73e8; border: 3px solid white;
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.15), 0 1px 4px rgba(0,0,0,0.35);
+    }
+    .me-dot::after {
+      content: ''; position: absolute; inset: -9px; border-radius: 50%;
+      background: rgba(26,115,232,0.35); animation: me-pulse 2s ease-out infinite;
+      z-index: -1;
+    }
+    @keyframes me-pulse { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+    .me-cone {
+      display: none; position: absolute; left: 50%; top: 50%;
+      width: 0; height: 0; transform-origin: 0 0;
+    }
+    .me-cone.on { display: block; }
+    .me-cone::before {
+      content: ''; position: absolute; left: -22px; top: -46px;
+      width: 44px; height: 46px;
+      background: linear-gradient(to top, rgba(26,115,232,0.55), rgba(26,115,232,0));
+      clip-path: polygon(50% 100%, 0 0, 100% 0);
+    }
+
+    /* ── Compass ── */
+    #btn-compass {
+      position: fixed; right: 14px; bottom: 34px; z-index: 900;
+      width: 56px; height: 56px; border-radius: 50%; border: none; padding: 0;
+      background: rgba(255,255,255,0.55);
+      backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      font-size: 22px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+      -webkit-tap-highlight-color: transparent;
+    }
+    #btn-compass.active { background: rgba(255,255,255,0.92); }
+    #compass-dial { display: none; width: 52px; height: 52px; transition: transform 0.15s linear; }
+    #btn-compass.active #compass-dial { display: block; }
+    #btn-compass.active #compass-emoji { display: none; }
+    #compass-readout {
+      display: none; position: fixed; right: 78px; bottom: 45px; z-index: 900;
+      background: rgba(0,0,0,0.72); color: white;
+      padding: 6px 12px; border-radius: 999px; font-size: 14px; font-weight: 700;
+      font-variant-numeric: tabular-nums; pointer-events: none;
+    }
+    #compass-readout.on { display: block; }
+
     /* PWA safe areas */
     @supports (padding-bottom: env(safe-area-inset-bottom)) {
       #sheet { bottom: env(safe-area-inset-bottom); }
@@ -336,6 +384,21 @@
 </div>
 
 <button id="btn-hide-pins" title="Hide all pins">🙈</button>
+
+<button id="btn-compass" title="Compass">
+  <span id="compass-emoji">🧭</span>
+  <svg id="compass-dial" viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="46" fill="white" stroke="#ccc" stroke-width="2"/>
+    <polygon points="50,10 58,50 42,50" fill="#d93025"/>
+    <polygon points="50,90 58,50 42,50" fill="#9aa0a6"/>
+    <circle cx="50" cy="50" r="4" fill="#333"/>
+    <text x="50" y="28" text-anchor="middle" font-size="13" font-weight="700" fill="white">N</text>
+    <text x="50" y="82" text-anchor="middle" font-size="11" font-weight="700" fill="#333">S</text>
+    <text x="84" y="54" text-anchor="middle" font-size="11" font-weight="700" fill="#333">E</text>
+    <text x="16" y="54" text-anchor="middle" font-size="11" font-weight="700" fill="#333">W</text>
+  </svg>
+</button>
+<div id="compass-readout"></div>
 
 <div id="update-banner">
   🔄 Update ready
@@ -627,8 +690,107 @@
   });
 
   // ── Locate ───────────────────────────────────────────────────────────────
+  // Blue dot + accuracy ring that follow the GPS; the cone shows facing.
+  let meMarker = null, meAccuracy = null, meWatchId = null, meCentered = false;
+  const meIcon = L.divIcon({
+    className: '',
+    html: '<div class="me-icon"><div class="me-cone"></div><div class="me-dot"></div></div>',
+    iconSize: [22, 22], iconAnchor: [11, 11],
+  });
+
+  function updateMe(coords) {
+    gps.pos = coords;
+    const ll = [coords.latitude, coords.longitude];
+    if (!meMarker) {
+      meAccuracy = L.circle(ll, {
+        radius: coords.accuracy || 0, interactive: false,
+        color: '#1a73e8', weight: 1, opacity: 0.4, fillColor: '#1a73e8', fillOpacity: 0.12,
+      }).addTo(map);
+      meMarker = L.marker(ll, { icon: meIcon, interactive: false, keyboard: false, zIndexOffset: 2000 }).addTo(map);
+      applyHeading();
+    } else {
+      meMarker.setLatLng(ll);
+      meAccuracy.setLatLng(ll).setRadius(coords.accuracy || 0);
+    }
+    if (!meCentered) { meCentered = true; map.setView(ll, Math.max(map.getZoom(), 13)); }
+  }
+
   document.getElementById('btn-locate').addEventListener('click', () => {
-    requestGPS(coords => map.setView([coords.latitude, coords.longitude], 13));
+    if (!navigator.geolocation) { showToast('Location not available'); return; }
+    startHeading(true);
+    meCentered = false;
+    if (meMarker && gps.pos) { meCentered = true; map.setView([gps.pos.latitude, gps.pos.longitude], Math.max(map.getZoom(), 13)); }
+    if (meWatchId === null) {
+      meWatchId = navigator.geolocation.watchPosition(
+        p => updateMe(p.coords),
+        err => {
+          // Only give up on a real denial; timeouts/weak signal are transient.
+          if (err.code !== err.PERMISSION_DENIED) return;
+          showToast('Location access needed');
+          navigator.geolocation.clearWatch(meWatchId); meWatchId = null;
+        },
+        { enableHighAccuracy: true, maximumAge: 5000 }
+      );
+    }
+  });
+
+  // ── Compass / heading ────────────────────────────────────────────────────
+  let heading = null, headingStarted = false;
+  const btnCompass = document.getElementById('btn-compass');
+  const compassDial = document.getElementById('compass-dial');
+  const compassReadout = document.getElementById('compass-readout');
+  const POINTS = ['N','NE','E','SE','S','SW','W','NW'];
+
+  function applyHeading() {
+    if (heading === null) return;
+    const deg = Math.round(heading) % 360;
+    compassDial.style.transform = `rotate(${-heading}deg)`;
+    compassReadout.textContent = `${POINTS[Math.round(heading / 45) % 8]} ${deg}°`;
+    if (meMarker) {
+      const cone = meMarker.getElement() && meMarker.getElement().querySelector('.me-cone');
+      if (cone) { cone.classList.add('on'); cone.style.transform = `rotate(${heading}deg)`; }
+    }
+  }
+
+  function onOrientation(e) {
+    let h = null;
+    if (typeof e.webkitCompassHeading === 'number') h = e.webkitCompassHeading;   // iOS
+    else if (e.absolute && e.alpha !== null) h = 360 - e.alpha;                   // Android
+    if (h === null) return;
+    const screenAngle = (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+    heading = (h + screenAngle + 360) % 360;
+    applyHeading();
+  }
+
+  // iOS needs permission requested from a tap; quiet=true skips the toast.
+  function startHeading(quiet) {
+    if (headingStarted) return Promise.resolve(true);
+    const D = window.DeviceOrientationEvent;
+    if (!D) { if (!quiet) showToast('Compass not available on this device'); return Promise.resolve(false); }
+    const ask = typeof D.requestPermission === 'function' ? D.requestPermission() : Promise.resolve('granted');
+    return ask.then(state => {
+      if (state !== 'granted') { if (!quiet) showToast('Compass permission denied'); return false; }
+      headingStarted = true;
+      window.addEventListener('ondeviceorientationabsolute' in window ? 'deviceorientationabsolute' : 'deviceorientation', onOrientation);
+      return true;
+    }).catch(() => { if (!quiet) showToast('Compass permission denied'); return false; });
+  }
+
+  btnCompass.addEventListener('click', () => {
+    if (btnCompass.classList.contains('active')) {
+      btnCompass.classList.remove('active');
+      compassReadout.classList.remove('on');
+      return;
+    }
+    startHeading(false).then(ok => {
+      if (!ok) return;
+      btnCompass.classList.add('active');
+      compassReadout.classList.add('on');
+      if (heading === null) {
+        compassReadout.textContent = '…';
+        setTimeout(() => { if (heading === null) showToast('No compass sensor detected'); }, 2000);
+      }
+    });
   });
 
   // ── Near Me ──────────────────────────────────────────────────────────────
