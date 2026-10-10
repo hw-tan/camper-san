@@ -723,7 +723,12 @@
     if (meWatchId === null) {
       meWatchId = navigator.geolocation.watchPosition(
         p => updateMe(p.coords),
-        () => { showToast('Location access needed'); navigator.geolocation.clearWatch(meWatchId); meWatchId = null; },
+        err => {
+          // Only give up on a real denial; timeouts/weak signal are transient.
+          if (err.code !== err.PERMISSION_DENIED) return;
+          showToast('Location access needed');
+          navigator.geolocation.clearWatch(meWatchId); meWatchId = null;
+        },
         { enableHighAccuracy: true, maximumAge: 5000 }
       );
     }
